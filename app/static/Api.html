@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        #boton-chat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+
+        #ventana-chat {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 260px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 999;
+        }
+
+        #ventana-chat textarea {
+            width: 100%;
+            border-radius: 5px;
+            padding: 5px;
+            resize: none;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        #ventana-chat button {
+            margin-top: 5px;
+            width: 100%;
+            padding: 6px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #ventana-chat button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Botón flotante -->
+    <button id="boton-chat">💬</button>
+
+    <!-- Ventana de chat -->
+    <div id="ventana-chat">
+        <form id="form-chat">
+            <textarea name="mensaje" rows="3" placeholder="Escribe tu mensaje..."></textarea>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        const btnChat = document.getElementById('boton-chat');
+        const ventana = document.getElementById('ventana-chat');
+        const form = document.getElementById('form-chat');
+
+        btnChat.addEventListener('click', () => {
+            ventana.style.display = (ventana.style.display === 'none' || ventana.style.display === '') ? 'block' : 'none';
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const mensaje = this.mensaje.value.trim();
+
+            if (mensaje !== '') {
+                fetch('http://127.0.0.1/test_connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: "user", content: mensaje })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert("Mensaje enviado correctamente");
+                    form.reset();
+                    ventana.style.display = 'none';
+                })
+                .catch(error => {
+                    alert("Error al enviar el mensaje");
+                    console.error(error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

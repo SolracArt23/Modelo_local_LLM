@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login y Registro</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #1f4068;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #00f2fe;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #00f2fe;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00f2fe;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      color: #141e30;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #00c9d7;
+    }
+
+    .switch {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .switch a {
+      color: #00f2fe;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      margin-top: 10px;
+      text-align: center;
+      color: #00ffae;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="container" id="loginForm">
+    <h2>Iniciar Sesión</h2>
+    <label for="loginUser">Usuario</label>
+    <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
+    
+    <label for="loginPassword">Contraseña</label>
+    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
+    
+    <button onclick="enviarLogin()">Entrar</button>
+
+    <div class="message" id="loginMensaje"></div>
+    
+    <div class="switch">
+      ¿No tienes cuenta? <a onclick="toggleForms()">Regístrate</a>
+    </div>
+  </div>
+
+  <!-- Registro -->
+  <div class="container hidden" id="registerForm">
+    <h2>Registro</h2>
+    <label for="regName">Nombre</label>
+    <input type="text" id="regName" placeholder="Tu nombre completo">
+    
+    <label for="regPassword">Contraseña</label>
+    <input type="password" id="regPassword" placeholder="Crea una contraseña">
+    
+    <label for="regCompany">Empresa</label>
+    <input type="text" id="regCompany" placeholder="Nombre de la empresa">
+    
+    <button onclick="enviarRegistro()">Registrarse</button>
+
+    <div class="message" id="registroMensaje"></div>
+    
+    <div class="switch">
+      ¿Ya tienes cuenta? <a onclick="toggleForms()">Inicia sesión</a>
+    </div>
+  </div>
+
+  <script>
+    function toggleForms() {
+      document.getElementById('loginForm').classList.toggle('hidden');
+      document.getElementById('registerForm').classList.toggle('hidden');
+      document.getElementById('registroMensaje').innerText = '';
+      document.getElementById('loginMensaje').innerText = '';
+    }
+
+    function enviarRegistro() {
+      const nombre = document.getElementById('regName').value;
+      const password = document.getElementById('regPassword').value;
+      const empresa = document.getElementById('regCompany').value;
+
+      fetch('/Envio_datos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: nombre,
+          password: password,
+          empresa: empresa
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const msg = document.getElementById('registroMensaje');
+        msg.innerText = data.message || "Registro exitoso.";
+        msg.style.color = "#00ffae";
+      })
+      .catch(error => {
+        const msg = document.getElementById('registroMensaje');
+        msg.innerText = "Error al registrar. Intenta de nuevo.";
+        msg.style.color = "red";
+        console.error('Error:', error);
+      });
+    }
+
+    function enviarLogin() {
+      const usuario = document.getElementById('loginUser').value;
+      const password = document.getElementById('loginPassword').value;
+
+      fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          usuario: usuario,
+          password: password
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const msg = document.getElementById('loginMensaje');
+        msg.innerText = data.message || "Inicio de sesión exitoso.";
+        msg.style.color = "#00ffae";
+        // Evalaur credenciales
+        if (data.message == "Credenciales correctas"){
+            localStorage.setItem('usuario', usuario);
+            localStorage.setItem('empresa', data.empresa);
+            window.location.href = "/";
+        }
+        
+      })
+      .catch(error => {
+        const msg = document.getElementById('loginMensaje');
+        msg.innerText = "Error al iniciar sesión.";
+        msg.style.color = "red";
+        console.error('Error:', error);
+      });
+    }
+  </script>
+
+</body>
+</html>

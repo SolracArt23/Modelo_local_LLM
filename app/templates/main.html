@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testing Model</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: #fff;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a2e;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+
+    .sidebar h2 {
+      color: #00f2fe;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: #b0bec5;
+      margin: 10px 0;
+      transition: color 0.2s ease;
+    }
+
+    .sidebar a:hover {
+      color: #00f2fe;
+    }
+
+    .main {
+      flex: 1;
+      padding: 40px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 26px;
+      color: #00f2fe;
+    }
+
+    .profile-icon {
+      width: 45px;
+      height: 45px;
+      background-color: #00f2fe;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #141e30;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .form-section {
+      margin-top: 40px;
+      background-color: #1f4068;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    .form-section label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #00f2fe;
+    }
+
+    .form-section input[type="file"],
+    .form-section input[type="text"],
+    .form-section textarea {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+
+    .form-section button {
+      background-color: #00f2fe;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      color: #141e30;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .form-section button:hover {
+      background-color: #00c9d7;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Menú</h2>
+    <a href="#">Upload Files</a>
+    <a href="/test_connection">Script Panel</a>
+    <a href="#apiConnectCode">API Connect</a>
+  </div>
+
+<div class="main">
+    <div class="header">
+        <h1>Mockup / Main</h1>
+        <div class="profile-icon">👤</div>
+    </div>
+    <script>
+        // Leer datos del localStorage
+        const user = localStorage.getItem('usuario') || 'Usuario';
+        const company = localStorage.getItem('empresa') || 'Empresa';
+
+        // Crear elementos para mostrar usuario y empresa
+        const userInfo = document.createElement('div');
+        userInfo.style.marginTop = '20px';
+        userInfo.style.color = '#00f2fe';
+        userInfo.style.fontSize = '18px';
+        userInfo.innerHTML = `<strong>Usuario:</strong> ${user} <br> <strong>Empresa:</strong> ${company}`;
+
+        // Agregar la información al contenedor principal
+        document.querySelector('.main').appendChild(userInfo);
+    </script>
+
+    <div class="form-section">
+        <!-- formulario para enviar archivos -->
+        <form action="/upload" method="post" enctype="multipart/form-data">
+        <label for="file">Subir archivo (.pdf):</label>
+        <input type="file" id="file" name="file" accept=".pdf">
+
+        <label for="description">Breve descripción:</label>
+        <textarea id="description" name="description" rows="4" placeholder="Escribe la descripción del archivo..."></textarea>
+
+        <label for="apiKey">Cuando usar?:</label>
+        <input type="text" id="casos_de_uso" name="casos_de_uso" placeholder="Usar este archivo cuando necesites ....">
+
+        <button type="submit">Enviar</button>
+    </form>
+    </div>
+    <div class="form-section">
+        <label for="apiConnectCode">Despliega esto en tu web:</label>
+        <button onclick="downloadApiFile()">Descargar Api.html</button>
+    <script>
+        function downloadApiFile() {
+            const link = document.createElement('a');
+            link.href = '/descargar_api';
+            link.click();
+        }
+    </script>
+
+
+    </div>
+  </div>
+</body>
+</html>
