@@ -6,6 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 import PyPDF2
 from general_func.chatting import Chating_func
+from general_func.BD_conn import BD_conn
 # Configuracion del servidor
 app = Flask(__name__)
 # Configuración para subir archivos
@@ -37,27 +38,36 @@ def Login():
         if not usuario or not password:
             return jsonify({"message": "Faltan campos"}), 400
 
-        try:
-            conn = sqlite3.connect('db/mi_base.db')
-            cursor = conn.cursor()
-
-            # Usar parámetros seguros para evitar SQL Injection
-            cursor.execute("SELECT id,empresa FROM usuarios WHERE nombre = ? AND password = ?", (usuario, password))
-            result = cursor.fetchone()
-            print(result)
-            conn.close()
-
-            if result:
-                return jsonify({"message": "Credenciales correctas","usuario":usuario,"empresa":result[1]}), 200
-            else:
-                return jsonify({"message": "Credenciales incorrectas"}), 401
-
-        except Exception as e:
-            return jsonify({"message": f"Error del servidor: {str(e)}"}), 500
-
+        #testar si ya existia una conexion previa 
+        if BD_conn.instancia == 0:
+            global bd
+            bd = BD_conn()
+        
+        #enviar respuesta al servidor de autenticacion
+        result = bd.execute_query("SELECT id,empresa FROM usuarios WHERE nombre = ? AND password = ?", (usuario, password))[0] 
+        print(result,usuario,password)
+        if result:
+            return jsonify({"message": "Credenciales correctas","usuario":usuario,"empresa":result[1]}), 200
+        else:
+            return jsonify({"message": "Credenciales incorrectas"}), 401
     else:
         return render_template("login.html")
+#Funcion de login y resgistro
+@app.route('/Envio_datos', methods=['POST'])
+def registrar():
+    data = request.get_json()
+    print(data)  # Aquí guardarías en base de datos o procesas
+    # Conectar a la base de datos SQLite (se creará si no existe)
+        #testar si ya existia una conexion previa 
+    if BD_conn.instancia == 0:
+        global bd
+        bd = BD_conn()
     
+    # Insertar los datos recibidos en la tabla
+    bd.execute_query('INSERT INTO usuarios (nombre,password,empresa) VALUES (?,?,?)', (str(data['nombre']),str(data['password']),str(data['empresa']),))
+
+    return jsonify({"message": "Datos recibidos correctamente."})
+
 #Funcion de testeo de conexion
 @app.route("/test_connection", methods=["GET", "POST"])
 def index():
