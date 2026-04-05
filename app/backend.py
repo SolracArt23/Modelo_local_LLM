@@ -489,6 +489,48 @@ def require_session_user():
     return user_id, None
 
 
+def get_request_api_token():
+    authorization_header = normalize_text(request.headers.get('Authorization'))
+    if authorization_header.lower().startswith('bearer '):
+        return authorization_header[7:].strip()
+
+    json_data = request.get_json(silent=True) if request.is_json else {}
+    json_data = json_data or {}
+
+    return normalize_text(
+        request.headers.get('X-API-Token') or
+        request.headers.get('X-Widget-Token') or
+        request.args.get('token') or
+        request.args.get('api_token') or
+        request.form.get('token') or
+        request.form.get('api_token') or
+        json_data.get('token') or
+        json_data.get('api_token') or
+        json_data.get('widget_token')
+    )
+
+
+def require_api_user(allow_session_fallback=True):
+    api_token = get_request_api_token()
+    if api_token:
+        account = get_user_by_widget_token(api_token)
+        if not account:
+            return None, None, (jsonify({"message": "El token de la API no es válido."}), 401)
+        return account['id'], account, None
+
+    if allow_session_fallback:
+        user_id, auth_error = require_session_user()
+        if auth_error:
+            return None, None, (jsonify({"message": "Debes enviar un token válido o iniciar sesión para usar la API."}), 401)
+
+        account = get_user_account(user_id)
+        if not account:
+            return None, None, (jsonify({"message": "Usuario no encontrado."}), 404)
+        return user_id, account, None
+
+    return None, None, (jsonify({"message": "Debes enviar un token válido para usar la API."}), 401)
+
+
 def require_admin_user():
     user_id, auth_error = require_session_user()
     if auth_error:
@@ -688,7 +730,7 @@ def Login():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    user_id, auth_error = require_session_user()
+    user_id, _, auth_error = require_api_user()
     if auth_error:
         return auth_error
 
@@ -850,7 +892,7 @@ def admin_delete_user(target_user_id):
 
 @app.route('/api/files', methods=['GET'])
 def list_uploaded_files():
-    user_id, auth_error = require_session_user()
+    user_id, _, auth_error = require_api_user()
     if auth_error:
         return auth_error
 
@@ -952,13 +994,14 @@ def widget_chat():
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat_with_file():
-    user_id, auth_error = require_session_user()
+    user_id, _, auth_error = require_api_user()
     if auth_error:
         return auth_error
 
     data = request.get_json(silent=True) or {}
     mensaje = (data.get('prompt') or data.get('mensaje') or '').strip()
     nombre_archivo = (data.get('archivo') or data.get('filename') or '').strip()
+    
 
     if not mensaje:
         return jsonify({"message": "El campo 'prompt' es obligatorio"}), 400

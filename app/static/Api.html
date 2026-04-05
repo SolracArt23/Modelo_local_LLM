@@ -32,21 +32,41 @@
 </head>
 <body>
     <h1>API del chatbot con selección de archivo</h1>
-    <p>La API permite consultar el modelo indicando explícitamente el archivo PDF que se usará como contexto y el prompt que se enviará al modelo.</p>
+        <p>La API permite consultar el modelo indicando explícitamente el archivo PDF que se usará como contexto y el prompt que se enviará al modelo.</p>
+        <p>Para usar esta integración ya no necesitas iniciar sesión en la web: debes enviar el token del usuario propietario en cada petición.</p>
+
+        <h2>Autenticación por token</h2>
+        <p>Puedes enviar el token de cualquiera de estas formas:</p>
+        <ul>
+                <li><code>Authorization: Bearer TU_TOKEN</code></li>
+                <li><code>X-API-Token: TU_TOKEN</code></li>
+                <li>En el cuerpo JSON como <code>token</code> o <code>widget_token</code></li>
+                <li>En <code>multipart/form-data</code> como <code>token</code> al subir archivos</li>
+        </ul>
+        <p>Ese token lo obtienes desde el panel principal del sistema, en la sección de créditos y widget.</p>
 
     <h2>1. Subir un archivo</h2>
-    <p>Primero sube el PDF a la carpeta de trabajo del chatbot.</p>
+        <p>Primero sube el PDF a la carpeta de trabajo del chatbot usando el token del usuario.</p>
     <pre>POST /upload</pre>
-    <p>Envía el archivo en <code>multipart/form-data</code> con la clave <code>file</code>.</p>
+        <p>Envía el archivo en <code>multipart/form-data</code> con la clave <code>file</code> y agrega el token.</p>
+        <pre>curl -X POST http://127.0.0.1:5000/upload \
+    -H "X-API-Token: TU_TOKEN" \
+    -F "file=@manual_usuario.pdf" \
+    -F "description=Manual del sistema" \
+    -F "casos_de_uso=Consultas operativas"</pre>
 
     <h2>2. Ver archivos disponibles</h2>
-    <pre>GET /api/files</pre>
+        <pre>GET /api/files</pre>
+        <pre>curl -X GET http://127.0.0.1:5000/api/files \
+    -H "Authorization: Bearer TU_TOKEN"</pre>
 
     <h2>3. Consultar el chatbot</h2>
     <pre>POST /api/chat
 Content-Type: application/json
+Authorization: Bearer TU_TOKEN
 
 {
+    "token": "TU_TOKEN",
   "archivo": "manual_usuario.pdf",
   "prompt": "Resume los puntos principales del documento"
 }</pre>
@@ -61,8 +81,10 @@ Content-Type: application/json
 
     <h2>Ejemplo con cURL</h2>
     <pre>curl -X POST http://127.0.0.1:5000/api/chat \
+    -H "Authorization: Bearer TU_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+        "token": "TU_TOKEN",
     "archivo": "manual_usuario.pdf",
     "prompt": "Que informacion relevante contiene este archivo?"
   }'</pre>
