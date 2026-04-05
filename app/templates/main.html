@@ -456,6 +456,107 @@
       margin-top: 14px;
     }
 
+    .credits-panel {
+      padding: 28px;
+      margin-bottom: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .credits-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .credits-balance {
+      padding: 24px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #141414 0%, #262626 100%);
+      color: #fff;
+    }
+
+    .credits-balance span {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.62);
+      margin-bottom: 10px;
+    }
+
+    .credits-balance strong {
+      display: block;
+      font-size: 3rem;
+      letter-spacing: -0.06em;
+      margin-bottom: 10px;
+    }
+
+    .credits-balance p {
+      margin: 0;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.65;
+    }
+
+    .credits-controls {
+      display: grid;
+      gap: 16px;
+    }
+
+    .credits-form-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 220px) repeat(3, auto);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .credits-controls input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fbfbfa;
+      font-size: 15px;
+    }
+
+    .credits-controls input:focus {
+      outline: none;
+      border-color: #111111;
+      box-shadow: 0 0 0 4px rgba(17,17,17,0.06);
+    }
+
+    .token-box {
+      margin-top: 10px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(17,17,17,0.04);
+      border: 1px solid rgba(17,17,17,0.06);
+      word-break: break-all;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 13px;
+      color: #222;
+    }
+
+    .ghost-btn {
+      border: 1px solid rgba(17,17,17,0.12);
+      background: #fff;
+      color: #111;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+      background: #f7f7f5;
+    }
+
     .model-config-panel {
       padding: 28px;
       margin-bottom: 22px;
@@ -738,7 +839,9 @@
       .upload-grid,
       .tools-panel,
       .file-meta,
-      .config-grid {
+      .config-grid,
+      .credits-grid,
+      .credits-form-row {
         grid-template-columns: 1fr;
       }
     }
@@ -975,6 +1078,46 @@ Usa un tono profesional y directo.</div>
       </div>
     </section>
 
+    <section class="credits-panel" id="creditsSection">
+      <div class="section-head">
+        <div>
+          <h3>Créditos y widget</h3>
+          <p>Gestiona el saldo disponible para el widget resumido y descarga un HTML listo para insertar en otra página web.</p>
+        </div>
+      </div>
+
+      <div class="credits-grid">
+        <aside class="credits-balance">
+          <span>Créditos disponibles</span>
+          <strong id="creditsBalance">{{ user_credits or 0 }}</strong>
+          <p>Cada consulta hecha desde el widget resumido consume un crédito del usuario propietario del token embebido.</p>
+        </aside>
+
+        <div class="credits-controls">
+          <div>
+            <label for="creditsAmount">Cantidad de créditos</label>
+            <div class="credits-form-row">
+              <input type="number" id="creditsAmount" min="0" step="1" value="10">
+              <button type="button" onclick="updateCredits('add')">Agregar</button>
+              <button type="button" class="secondary-btn" onclick="updateCredits('subtract')">Descontar</button>
+              <button type="button" class="ghost-btn" onclick="updateCredits('set')">Fijar saldo</button>
+            </div>
+          </div>
+
+          <div>
+            <label>Token del widget</label>
+            <div class="token-box" id="widgetTokenBox">{{ widget_token or 'Token no disponible' }}</div>
+          </div>
+
+          <div>
+            <button type="button" onclick="downloadWidgetFile()">Descargar widget HTML</button>
+          </div>
+
+          <div class="status-banner" id="creditsStatus"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="tools-panel">
       <div class="tool-card">
         <h4 id="apiConnectCode">Conecta la API a tu web</h4>
@@ -998,6 +1141,7 @@ Usa un tono profesional y directo.</div>
     const uploadForm = document.getElementById('uploadForm');
     const uploadStatus = document.getElementById('uploadStatus');
     const modelConfigStatus = document.getElementById('modelConfigStatus');
+    const creditsStatus = document.getElementById('creditsStatus');
 
     function showStatus(message, type = 'success') {
       uploadStatus.textContent = message;
@@ -1007,6 +1151,11 @@ Usa un tono profesional y directo.</div>
     function showConfigStatus(message, type = 'success') {
       modelConfigStatus.textContent = message;
       modelConfigStatus.className = `status-banner show ${type}`;
+    }
+
+    function showCreditsStatus(message, type = 'success') {
+      creditsStatus.textContent = message;
+      creditsStatus.className = `status-banner show ${type}`;
     }
 
     function updateSelectedFile(file) {
@@ -1093,6 +1242,30 @@ Usa un tono profesional y directo.</div>
       }
 
       showConfigStatus(data.message || 'Configuración guardada correctamente.');
+    }
+
+    async function updateCredits(action) {
+      const amount = document.getElementById('creditsAmount').value;
+      const response = await fetch('/credits', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action, amount })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showCreditsStatus(data.message || 'No fue posible actualizar los créditos.', 'error');
+        return;
+      }
+
+      document.getElementById('creditsBalance').textContent = data.creditos;
+      showCreditsStatus(data.message || 'Créditos actualizados correctamente.');
+    }
+
+    function downloadWidgetFile() {
+      const link = document.createElement('a');
+      link.href = '/descargar_widget';
+      link.click();
     }
 
     async function toggleFile(fileId) {

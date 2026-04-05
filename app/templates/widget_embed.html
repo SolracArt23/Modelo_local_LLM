@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ widget_title }}</title>
+  <style>
+    :root {
+      --widget-bg: #101010;
+      --widget-surface: #ffffff;
+      --widget-muted: #6a6a6a;
+      --widget-line: rgba(0, 0, 0, 0.08);
+      --widget-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+      --widget-radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: transparent;
+    }
+
+    .widget-launcher {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 64px;
+      height: 64px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #1a1a1a 0%, #050505 100%);
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: var(--widget-shadow);
+      z-index: 9999;
+    }
+
+    .widget-panel {
+      position: fixed;
+      right: 24px;
+      bottom: 102px;
+      width: min(380px, calc(100vw - 32px));
+      height: min(620px, calc(100vh - 140px));
+      display: none;
+      flex-direction: column;
+      border-radius: 28px;
+      overflow: hidden;
+      background: var(--widget-surface);
+      box-shadow: var(--widget-shadow);
+      z-index: 9999;
+      border: 1px solid var(--widget-line);
+    }
+
+    .widget-panel.open {
+      display: flex;
+    }
+
+    .widget-head {
+      padding: 20px 22px;
+      background: linear-gradient(180deg, #141414 0%, #242424 100%);
+      color: #fff;
+    }
+
+    .widget-head strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .widget-head span {
+      display: block;
+      color: rgba(255,255,255,0.72);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .widget-credits {
+      margin-top: 12px;
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .widget-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      background: linear-gradient(180deg, #fafaf8 0%, #f2f2ef 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bubble {
+      max-width: 88%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.65;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bubble.user {
+      align-self: flex-end;
+      background: #151515;
+      color: #fff;
+    }
+
+    .bubble.bot {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 1px solid var(--widget-line);
+      color: #1a1a1a;
+    }
+
+    .widget-loading {
+      display: none;
+      align-self: flex-start;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid var(--widget-line);
+      color: var(--widget-muted);
+      font-size: 14px;
+    }
+
+    .widget-loading.show {
+      display: block;
+    }
+
+    .widget-foot {
+      padding: 16px;
+      border-top: 1px solid var(--widget-line);
+      background: #fff;
+    }
+
+    .widget-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .widget-form textarea {
+      width: 100%;
+      min-height: 54px;
+      max-height: 140px;
+      resize: vertical;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 16px;
+      padding: 14px;
+      font: inherit;
+      line-height: 1.55;
+    }
+
+    .widget-form textarea:focus {
+      outline: none;
+      border-color: #111;
+      box-shadow: 0 0 0 4px rgba(17,17,17,0.06);
+    }
+
+    .widget-form button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #1b1b1b 0%, #050505 100%);
+      cursor: pointer;
+    }
+
+    .widget-error {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #8a1d1d;
+      min-height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      .widget-launcher {
+        right: 16px;
+        bottom: 16px;
+      }
+
+      .widget-panel {
+        right: 16px;
+        bottom: 90px;
+        width: calc(100vw - 32px);
+        height: calc(100vh - 120px);
+      }
+
+      .widget-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="widget-launcher" id="widgetLauncher" aria-label="Abrir chat">✦</button>
+
+  <section class="widget-panel" id="widgetPanel">
+    <header class="widget-head">
+      <strong>{{ widget_title }}</strong>
+      <span>Versión compacta del asistente para insertar en una página web externa.</span>
+      <div class="widget-credits" id="widgetCredits">Créditos disponibles</div>
+    </header>
+
+    <div class="widget-body" id="widgetBody">
+      <div class="bubble bot">Hola. Puedes escribir tu consulta y el widget consumirá créditos del usuario configurado para este token.</div>
+      <div class="widget-loading" id="widgetLoading">Consultando el modelo...</div>
+    </div>
+
+    <footer class="widget-foot">
+      <form class="widget-form" id="widgetForm">
+        <textarea id="widgetPrompt" placeholder="Escribe tu consulta..." required></textarea>
+        <button type="submit" id="widgetSubmit">Enviar</button>
+      </form>
+      <div class="widget-error" id="widgetError"></div>
+    </footer>
+  </section>
+
+  <script>
+    const API_BASE_URL = '{{ widget_api_url }}';
+    const WIDGET_TOKEN = '{{ widget_token }}';
+    const launcher = document.getElementById('widgetLauncher');
+    const panel = document.getElementById('widgetPanel');
+    const form = document.getElementById('widgetForm');
+    const promptInput = document.getElementById('widgetPrompt');
+    const submitButton = document.getElementById('widgetSubmit');
+    const body = document.getElementById('widgetBody');
+    const loading = document.getElementById('widgetLoading');
+    const errorBox = document.getElementById('widgetError');
+    const creditsLabel = document.getElementById('widgetCredits');
+
+    launcher.addEventListener('click', () => {
+      panel.classList.toggle('open');
+    });
+
+    function appendBubble(text, role) {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${role}`;
+      bubble.textContent = text;
+      body.insertBefore(bubble, loading);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function setLoadingState(isLoading) {
+      loading.classList.toggle('show', isLoading);
+      submitButton.disabled = isLoading;
+      submitButton.textContent = isLoading ? 'Enviando...' : 'Enviar';
+    }
+
+    function setCredits(value) {
+      if (typeof value === 'number') {
+        creditsLabel.textContent = `Créditos: ${value}`;
+      }
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const prompt = promptInput.value.trim();
+      errorBox.textContent = '';
+
+      if (!prompt) {
+        return;
+      }
+
+      appendBubble(prompt, 'user');
+      promptInput.value = '';
+      setLoadingState(true);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/widget/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            widget_token: WIDGET_TOKEN,
+            prompt
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          errorBox.textContent = data.message || 'No fue posible procesar la consulta.';
+          if (typeof data.creditos_restantes === 'number') {
+            setCredits(data.creditos_restantes);
+          }
+          return;
+        }
+
+        appendBubble(data.respuesta || 'Sin respuesta disponible.', 'bot');
+        setCredits(data.creditos_restantes);
+      } catch (error) {
+        errorBox.textContent = 'Error de conexión con el backend del widget.';
+      } finally {
+        setLoadingState(false);
+      }
+    });
+  </script>
+</body>
+</html>

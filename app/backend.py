@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string,render_template, jsonify,send_from_directory, redirect, url_for, session
+from flask import Flask, request, render_template_string,render_template, jsonify,send_from_directory, redirect, url_for, session, make_response
 from backend import *
 import requests
 import sqlite3
@@ -18,6 +18,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+DEFAULT_CREDITS = 30
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -51,9 +52,43 @@ def ensure_users_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             password TEXT NOT NULL,
-            empresa TEXT NOT NULL
+            empresa TEXT NOT NULL,
+            creditos INTEGER NOT NULL DEFAULT 30,
+            widget_token TEXT
         )
         '''
+    )
+
+
+def generate_widget_token():
+    return f"widget_{uuid4().hex}{uuid4().hex}"
+
+
+def ensure_user_account_columns():
+    database = get_db()
+    columns = database.execute_query('PRAGMA table_info(usuarios)') or []
+    column_names = {column[1] for column in columns}
+
+    if 'creditos' not in column_names:
+        database.execute_query(
+            f'ALTER TABLE usuarios ADD COLUMN creditos INTEGER NOT NULL DEFAULT {DEFAULT_CREDITS}'
+        )
+
+    if 'widget_token' not in column_names:
+        database.execute_query('ALTER TABLE usuarios ADD COLUMN widget_token TEXT')
+
+    users_without_token = database.execute_query(
+        'SELECT id FROM usuarios WHERE widget_token IS NULL OR widget_token = ""'
+    ) or []
+    for row in users_without_token:
+        database.execute_query(
+            'UPDATE usuarios SET widget_token = ? WHERE id = ?',
+            (generate_widget_token(), row[0])
+        )
+
+    database.execute_query(
+        'UPDATE usuarios SET creditos = ? WHERE creditos IS NULL',
+        (DEFAULT_CREDITS,)
     )
 
 
@@ -94,6 +129,7 @@ def ensure_user_model_settings_table():
 
 def ensure_core_tables():
     ensure_users_table()
+    ensure_user_account_columns()
     ensure_user_files_table()
     ensure_user_model_settings_table()
 
@@ -114,6 +150,70 @@ def normalize_text(value):
 
 def get_current_timestamp():
     return datetime.utcnow().isoformat()
+
+
+def get_user_account(user_id):
+    ensure_core_tables()
+    database = get_db()
+    rows = database.execute_query(
+        'SELECT id, nombre, empresa, creditos, widget_token FROM usuarios WHERE id = ?',
+        (user_id,)
+    ) or []
+    if not rows:
+        return None
+
+    row = rows[0]
+    return {
+        'id': row[0],
+        'nombre': row[1],
+        'empresa': row[2],
+        'creditos': row[3],
+        'widget_token': row[4],
+    }
+
+
+def get_user_by_widget_token(widget_token):
+    ensure_core_tables()
+    database = get_db()
+    rows = database.execute_query(
+        'SELECT id, nombre, empresa, creditos, widget_token FROM usuarios WHERE widget_token = ?',
+        (widget_token,)
+    ) or []
+    if not rows:
+        return None
+
+    row = rows[0]
+    return {
+        'id': row[0],
+        'nombre': row[1],
+        'empresa': row[2],
+        'creditos': row[3],
+        'widget_token': row[4],
+    }
+
+
+def update_user_credits(user_id, new_credit_value):
+    database = get_db()
+    safe_value = max(0, int(new_credit_value))
+    database.execute_query(
+        'UPDATE usuarios SET creditos = ? WHERE id = ?',
+        (safe_value, user_id)
+    )
+    return get_user_account(user_id)
+
+
+def change_user_credits(user_id, delta):
+    account = get_user_account(user_id)
+    if not account:
+        return None
+    return update_user_credits(user_id, account['creditos'] + int(delta))
+
+
+def add_widget_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    return response
 
 
 def get_user_model_behavior(user_id):
@@ -315,12 +415,16 @@ def main():
 
     ensure_core_tables()
 
+    account = get_user_account(session.get("user_id"))
+
     return render_template(
         "main.html",
         usuario=session.get("usuario"),
         empresa=session.get("empresa"),
         user_files=get_user_files(session.get("user_id")),
         model_behavior=get_user_model_behavior(session.get("user_id")),
+        user_credits=account['creditos'] if account else DEFAULT_CREDITS,
+        widget_token=account['widget_token'] if account else '',
     )
 
 @app.route("/descargar_api")
@@ -330,6 +434,26 @@ def descargar_api():
         path="Api.html",
         as_attachment=True  # Esto fuerza la descarga
     )
+
+
+@app.route('/descargar_widget')
+def descargar_widget():
+    user_id, auth_error = require_session_user()
+    if auth_error:
+        return redirect(url_for('Login'))
+
+    account = get_user_account(user_id)
+    widget_html = render_template(
+        'widget_embed.html',
+        widget_api_url=request.host_url.rstrip('/'),
+        widget_token=account['widget_token'],
+        widget_title=f"Asistente de {account['empresa']}",
+    )
+
+    response = make_response(widget_html)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    response.headers['Content-Disposition'] = 'attachment; filename=chat_widget_embed.html'
+    return response
 
 
 #Funcion de login y resgistro
@@ -359,8 +483,8 @@ def registrar():
 
     password_hash = generate_password_hash(password)
     database.execute_query(
-        'INSERT INTO usuarios (nombre,password,empresa) VALUES (?,?,?)',
-        (nombre, password_hash, empresa)
+        'INSERT INTO usuarios (nombre,password,empresa,creditos,widget_token) VALUES (?,?,?,?,?)',
+        (nombre, password_hash, empresa, DEFAULT_CREDITS, generate_widget_token())
     )
 
     return jsonify({"message": "Usuario registrado correctamente.", "usuario": nombre, "empresa": empresa}), 201
@@ -412,10 +536,17 @@ def Login():
                 (generate_password_hash(password), user_id)
             )
 
+        user_account = get_user_account(user_id)
+
         session["user_id"] = user_id
         session["usuario"] = stored_name
         session["empresa"] = empresa
-        return jsonify({"message": "Credenciales correctas","usuario":stored_name,"empresa":empresa}), 200
+        return jsonify({
+            "message": "Credenciales correctas",
+            "usuario":stored_name,
+            "empresa":empresa,
+            "creditos": user_account['creditos'] if user_account else DEFAULT_CREDITS,
+        }), 200
     else:
         if "usuario" in session:
             return redirect(url_for("main"))
@@ -471,6 +602,44 @@ def save_model_settings():
     }), 200
 
 
+@app.route('/credits', methods=['POST'])
+def manage_credits():
+    user_id, auth_error = require_session_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    action = normalize_text(data.get('action')).lower()
+    amount = data.get('amount', 0)
+
+    try:
+        amount = int(amount)
+    except (TypeError, ValueError):
+        return jsonify({"message": "El monto de créditos no es válido."}), 400
+
+    if action not in {'add', 'subtract', 'set'}:
+        return jsonify({"message": "La acción de créditos no es válida."}), 400
+
+    if amount < 0:
+        return jsonify({"message": "El monto de créditos debe ser positivo."}), 400
+
+    current_account = get_user_account(user_id)
+    if not current_account:
+        return jsonify({"message": "Usuario no encontrado."}), 404
+
+    if action == 'add':
+        updated_account = update_user_credits(user_id, current_account['creditos'] + amount)
+    elif action == 'subtract':
+        updated_account = update_user_credits(user_id, current_account['creditos'] - amount)
+    else:
+        updated_account = update_user_credits(user_id, amount)
+
+    return jsonify({
+        "message": "Créditos actualizados correctamente.",
+        "creditos": updated_account['creditos'],
+    }), 200
+
+
 @app.route('/api/files', methods=['GET'])
 def list_uploaded_files():
     user_id, auth_error = require_session_user()
@@ -511,6 +680,66 @@ def delete_user_file_route(file_id):
         return jsonify({"message": "Archivo no encontrado."}), 404
 
     return jsonify({"message": "Archivo eliminado correctamente.", "file": deleted_file}), 200
+
+
+@app.route('/api/widget/chat', methods=['POST', 'OPTIONS'])
+def widget_chat():
+    if request.method == 'OPTIONS':
+        return add_widget_cors_headers(make_response('', 204))
+
+    def widget_error(message, status_code, extra_payload=None):
+        payload = {"message": message}
+        if extra_payload:
+            payload.update(extra_payload)
+        response = jsonify(payload)
+        response.status_code = status_code
+        return add_widget_cors_headers(response)
+
+    data = request.get_json(silent=True) or {}
+    widget_token = normalize_text(data.get('widget_token'))
+    mensaje = normalize_text(data.get('prompt') or data.get('mensaje'))
+
+    if not widget_token:
+        return widget_error("El widget_token es obligatorio.", 400)
+
+    if not mensaje:
+        return widget_error("El prompt es obligatorio.", 400)
+
+    account = get_user_by_widget_token(widget_token)
+    if not account:
+        return widget_error("Token del widget no válido.", 401)
+
+    if account['creditos'] <= 0:
+        return widget_error(
+            "No tienes créditos disponibles para usar el widget.",
+            402,
+            {"creditos_restantes": 0},
+        )
+
+    archivos_activos = get_user_files(account['id'], only_active=True)
+    if not archivos_activos:
+        return widget_error("No hay archivos activos configurados para este widget.", 404)
+
+    try:
+        result = ejecutar_chat_archivo(
+            archivos_activos[0]['stored_name'],
+            mensaje,
+            custom_behavior=get_user_model_behavior(account['id']),
+        )
+    except FileNotFoundError:
+        return widget_error("El archivo de contexto no existe.", 404)
+    except requests.RequestException as exc:
+        return widget_error(f"Error al consultar el modelo: {str(exc)}", 502)
+
+    updated_account = change_user_credits(account['id'], -1)
+    payload = jsonify({
+        "respuesta": result['respuesta'],
+        "modelo": result['modelo'],
+        "archivo": archivos_activos[0]['original_name'],
+        "creditos_restantes": updated_account['creditos'] if updated_account else 0,
+    })
+    payload.status_code = 200
+    return add_widget_cors_headers(payload)
 
 
 @app.route('/api/chat', methods=['POST'])
