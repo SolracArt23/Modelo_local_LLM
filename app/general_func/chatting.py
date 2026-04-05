@@ -4,10 +4,15 @@ import PyPDF2
 class Chating_func():
     instancia = 0
     def RAG_model (self, mensaje:str) -> str:
+        system_parts = []
+
+        if self.custom_behavior:
+            system_parts.append(f"Comportamiento deseado del modelo: {self.custom_behavior}")
+
         if self.content_pdf is not None:
-            context = [{"role": "system", "content": f"El contenido del archivo PDF cargado es: {self.content_pdf}"}]
-        else:
-            context = [{"role": "system", "content": ""}]
+            system_parts.append(f"El contenido del archivo PDF cargado es: {self.content_pdf}")
+
+        context = [{"role": "system", "content": "\n\n".join(system_parts)}]
         
         #Agregar mensaje del usuario
         context += [{"role": "user", "content": mensaje,}]
@@ -50,11 +55,12 @@ class Chating_func():
         except Exception:
             return ""
 
-    def __init__(self,folder_chatting:str=None, selected_file:str=None):
+    def __init__(self,folder_chatting:str=None, selected_file:str=None, custom_behavior:str=None):
         #Generar una instancia 
         Chating_func.instancia += 1
         #Descargar el archivo PDF cargado
         self.folder_chatting = folder_chatting
         self.selected_file = selected_file
+        self.custom_behavior = custom_behavior or ""
         self.content_pdf = self.Read_content()
 

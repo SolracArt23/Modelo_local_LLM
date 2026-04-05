@@ -173,13 +173,20 @@
 
         .chat-layout {
             display: grid;
-            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+            grid-template-columns: minmax(360px, 0.78fr) minmax(460px, 1.22fr);
             gap: 22px;
+            align-items: stretch;
         }
 
         .form-panel,
         .response-panel {
             padding: 28px;
+        }
+
+        .response-panel {
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
         }
 
         .section-title {
@@ -251,6 +258,8 @@
         .conversation {
             display: grid;
             gap: 16px;
+            flex: 1;
+            align-content: start;
         }
 
         .message-card {
@@ -299,6 +308,70 @@
             background: linear-gradient(180deg, #fafaf8 0%, #f1f1ee 100%);
             border: 1px dashed #c9c9c4;
             padding: 26px;
+            flex: 1;
+        }
+
+        .loading-state {
+            display: none;
+            flex: 1;
+            border-radius: 24px;
+            background: linear-gradient(180deg, #151515 0%, #282828 100%);
+            color: #fff;
+            padding: 28px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-state.show {
+            display: flex;
+        }
+
+        .loading-shell {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .loading-shell strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .loading-shell p {
+            margin: 0 0 18px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.7;
+        }
+
+        .loading-bars {
+            display: grid;
+            gap: 12px;
+        }
+
+        .loading-bar {
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-bar::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+            transform: translateX(-100%);
+            animation: loadingSweep 1.3s infinite;
+        }
+
+        @keyframes loadingSweep {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
         }
 
         .empty-state strong {
@@ -334,6 +407,10 @@
             .hero-copy,
             .hero-side {
                 padding: 22px;
+            }
+
+            .response-panel {
+                min-height: 560px;
             }
 
             .field-footer {
@@ -384,6 +461,11 @@
                     <span>Objetivo</span>
                     <strong>Evaluar calidad de respuesta antes de producción</strong>
                 </div>
+
+                <div class="mini-chip">
+                    <span>Comportamiento configurado</span>
+                    <strong>{{ model_behavior if model_behavior else 'Sin instrucciones adicionales configuradas.' }}</strong>
+                </div>
             </aside>
         </section>
 
@@ -392,23 +474,35 @@
                 <h2 class="section-title">Enviar consulta</h2>
                 <p class="section-text">Redacta tu mensaje y envíalo al modelo. La prueba mantendrá el flujo actual del backend, pero con una experiencia visual más sólida.</p>
 
-                <form method="POST">
+                <form method="POST" id="testForm">
                     <div class="field-shell">
                         <textarea name="mensaje" placeholder="Escribe tu mensaje o instrucción para el modelo..." required autofocus>{{ mensaje or '' }}</textarea>
                         <div class="field-footer">
                             <div class="field-hint">Usa preguntas específicas para verificar mejor el contexto del documento.</div>
-                            <button type="submit">Enviar consulta</button>
+                            <button type="submit" id="submitButton">Enviar consulta</button>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <div class="response-panel panel">
+            <div class="response-panel panel" id="responsePanel">
                 <h2 class="section-title">Resultado</h2>
                 <p class="section-text">Aquí verás tanto el mensaje enviado como la respuesta generada por el modelo.</p>
 
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-shell">
+                        <strong>Generando respuesta...</strong>
+                        <p>El modelo está procesando tu consulta con el contexto activo. Esta vista permanecerá en carga hasta que el backend complete la respuesta.</p>
+                        <div class="loading-bars">
+                            <div class="loading-bar"></div>
+                            <div class="loading-bar"></div>
+                            <div class="loading-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
                 {% if mensaje %}
-                    <div class="conversation">
+                    <div class="conversation" id="conversationState">
                         <article class="message-card user">
                             <span class="message-label">Tu mensaje</span>
                             <p class="message-body">{{ mensaje }}</p>
@@ -420,7 +514,7 @@
                         </article>
                     </div>
                 {% else %}
-                    <div class="empty-state">
+                    <div class="empty-state" id="emptyState">
                         <strong>Aún no hay una consulta enviada.</strong>
                         <p>Escribe un mensaje en el panel izquierdo y usa esta vista para revisar la respuesta con más claridad.</p>
                     </div>
@@ -428,5 +522,26 @@
             </div>
         </section>
     </div>
+    <script>
+        const testForm = document.getElementById('testForm');
+        const submitButton = document.getElementById('submitButton');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const conversationState = document.getElementById('conversationState');
+
+        testForm.addEventListener('submit', function () {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Consultando...';
+            loadingState.classList.add('show');
+
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+
+            if (conversationState) {
+                conversationState.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

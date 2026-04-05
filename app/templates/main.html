@@ -456,6 +456,257 @@
       margin-top: 14px;
     }
 
+    .model-config-panel {
+      padding: 28px;
+      margin-bottom: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .config-shell {
+      background: linear-gradient(180deg, #fafaf8 0%, #f2f2ef 100%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .config-shell textarea {
+      width: 100%;
+      min-height: 220px;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.75;
+    }
+
+    .config-shell textarea:focus {
+      outline: none;
+    }
+
+    .config-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .config-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .config-tips {
+      padding: 24px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #151515 0%, #262626 100%);
+      color: #fff;
+    }
+
+    .config-tips h4 {
+      margin: 0 0 12px;
+      font-size: 1.3rem;
+      letter-spacing: -0.03em;
+    }
+
+    .config-tips p {
+      margin: 0 0 14px;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.7;
+    }
+
+    .config-example {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      font-size: 14px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.88);
+      white-space: pre-wrap;
+    }
+
+    .status-banner {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .status-banner.show {
+      display: block;
+    }
+
+    .status-banner.success {
+      background: rgba(17, 94, 57, 0.08);
+      border-color: rgba(17, 94, 57, 0.18);
+      color: #175c39;
+    }
+
+    .status-banner.error {
+      background: rgba(124, 26, 26, 0.08);
+      border-color: rgba(124, 26, 26, 0.16);
+      color: #7c1a1a;
+    }
+
+    .file-library {
+      padding: 28px;
+      margin-bottom: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .file-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .file-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      padding: 22px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #ffffff 0%, #f6f6f3 100%);
+      border: 1px solid rgba(17,17,17,0.06);
+    }
+
+    .file-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .file-title-row h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-pill.active {
+      background: rgba(17, 94, 57, 0.09);
+      color: #175c39;
+    }
+
+    .status-pill.inactive {
+      background: rgba(17, 17, 17, 0.08);
+      color: #4f4f4f;
+    }
+
+    .file-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .file-meta-item {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(17,17,17,0.04);
+    }
+
+    .file-meta-item span {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #777;
+    }
+
+    .file-meta-item strong {
+      font-size: 14px;
+      color: #1a1a1a;
+      font-weight: 600;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .file-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .secondary-btn,
+    .danger-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .secondary-btn {
+      background: #111111;
+      color: #fff;
+    }
+
+    .danger-btn {
+      background: rgba(124, 26, 26, 0.1);
+      color: #7c1a1a;
+    }
+
+    .secondary-btn:hover,
+    .danger-btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .empty-library {
+      padding: 26px;
+      border-radius: 22px;
+      border: 1px dashed #c7c7c1;
+      background: linear-gradient(180deg, #fafaf8 0%, #f1f1ee 100%);
+    }
+
+    .empty-library strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .empty-library p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
     .logout-btn {
       position: fixed;
       right: 28px;
@@ -485,7 +736,9 @@
     @media (max-width: 1080px) {
       .top-grid,
       .upload-grid,
-      .tools-panel {
+      .tools-panel,
+      .file-meta,
+      .config-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -518,8 +771,17 @@
       .form-section,
       .hero-panel,
       .identity-card,
-      .tool-card {
+      .tool-card,
+      .file-library {
         padding: 20px;
+      }
+
+      .file-card {
+        grid-template-columns: 1fr;
+      }
+
+      .file-actions {
+        justify-content: flex-start;
       }
 
       .logout-btn {
@@ -629,6 +891,88 @@
 
         <input class="hidden-file-input" type="file" id="file" name="file" accept=".pdf">
       </form>
+      <div class="status-banner" id="uploadStatus"></div>
+    </section>
+
+    <section class="file-library">
+      <div class="section-head">
+        <div>
+          <h3>Biblioteca de archivos</h3>
+          <p>Administra qué documentos participan en el RAG. Puedes activar, desactivar o eliminar cada archivo sin salir del panel.</p>
+        </div>
+      </div>
+
+      {% if user_files %}
+        <div class="file-list">
+          {% for file in user_files %}
+            <article class="file-card" data-file-id="{{ file.id }}">
+              <div>
+                <div class="file-title-row">
+                  <h4>{{ file.original_name }}</h4>
+                  <span class="status-pill {{ 'active' if file.is_active else 'inactive' }}">{{ 'Activo' if file.is_active else 'Inactivo' }}</span>
+                </div>
+
+                <div class="file-meta">
+                  <div class="file-meta-item">
+                    <span>Descripción</span>
+                    <strong>{{ file.description if file.description else 'Sin descripción registrada.' }}</strong>
+                  </div>
+                  <div class="file-meta-item">
+                    <span>Uso sugerido</span>
+                    <strong>{{ file.use_case if file.use_case else 'Sin caso de uso definido.' }}</strong>
+                  </div>
+                  <div class="file-meta-item">
+                    <span>Fecha de carga</span>
+                    <strong>{{ file.created_at }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="file-actions">
+                <button class="secondary-btn" type="button" onclick="toggleFile({{ file.id }})">{{ 'Desactivar' if file.is_active else 'Activar' }}</button>
+                <button class="danger-btn" type="button" onclick="deleteFile({{ file.id }}, '{{ file.original_name|replace("'", "\\'") }}')">Eliminar</button>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-library">
+          <strong>Aún no tienes archivos asociados a tu usuario.</strong>
+          <p>Sube tu primer PDF y aparecerá aquí para que puedas administrarlo y decidir si participa o no en el contexto del RAG.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="model-config-panel" id="modelConfigSection">
+      <div class="section-head">
+        <div>
+          <h3>Comportamiento del modelo</h3>
+          <p>Define cómo debe actuar el asistente para este usuario. Esta instrucción se añadirá al contexto del sistema antes de consultar el RAG.</p>
+        </div>
+      </div>
+
+      <div class="config-grid">
+        <div>
+          <div class="config-shell">
+            <textarea id="modelBehavior" placeholder="Ejemplo: Responde como un analista técnico, sé preciso, evita inventar información y prioriza respuestas breves con lenguaje profesional.">{{ model_behavior or '' }}</textarea>
+            <div class="config-foot">
+              <div class="config-note">Usa esta sección para definir tono, nivel técnico, límites y estilo de respuesta.</div>
+              <button type="button" onclick="saveModelBehavior()">Guardar configuración</button>
+            </div>
+          </div>
+          <div class="status-banner" id="modelConfigStatus"></div>
+        </div>
+
+        <aside class="config-tips">
+          <h4>Qué puedes indicar aquí</h4>
+          <p>Sirve para decirle al modelo cómo comportarse: si debe ser formal, breve, pedagógico, técnico, prudente o ceñirse solo al documento.</p>
+          <div class="config-example">Ejemplo:
+Actúa como un consultor de soporte empresarial.
+Responde solo con base en la información del documento.
+Si no encuentras soporte suficiente, indícalo con claridad.
+Usa un tono profesional y directo.</div>
+        </aside>
+      </div>
     </section>
 
     <section class="tools-panel">
@@ -651,6 +995,19 @@
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file');
     const fileName = document.getElementById('fileName');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const modelConfigStatus = document.getElementById('modelConfigStatus');
+
+    function showStatus(message, type = 'success') {
+      uploadStatus.textContent = message;
+      uploadStatus.className = `status-banner show ${type}`;
+    }
+
+    function showConfigStatus(message, type = 'success') {
+      modelConfigStatus.textContent = message;
+      modelConfigStatus.className = `status-banner show ${type}`;
+    }
 
     function updateSelectedFile(file) {
       if (!file) {
@@ -665,6 +1022,30 @@
 
     fileInput.addEventListener('change', function () {
       updateSelectedFile(this.files[0]);
+    });
+
+    uploadForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      if (!fileInput.files.length) {
+        showStatus('Selecciona un archivo PDF antes de subirlo.', 'error');
+        return;
+      }
+
+      const formData = new FormData(uploadForm);
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showStatus(data.message || 'No fue posible subir el archivo.', 'error');
+        return;
+      }
+
+      showStatus(data.message || 'Archivo subido correctamente.');
+      setTimeout(() => window.location.reload(), 700);
     });
 
     ['dragenter', 'dragover'].forEach(eventName => {
@@ -695,6 +1076,60 @@
       const link = document.createElement('a');
       link.href = '/descargar_api';
       link.click();
+    }
+
+    async function saveModelBehavior() {
+      const behaviorPrompt = document.getElementById('modelBehavior').value.trim();
+      const response = await fetch('/model-settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ behavior_prompt: behaviorPrompt })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showConfigStatus(data.message || 'No fue posible guardar la configuración.', 'error');
+        return;
+      }
+
+      showConfigStatus(data.message || 'Configuración guardada correctamente.');
+    }
+
+    async function toggleFile(fileId) {
+      const response = await fetch(`/files/${fileId}/toggle`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showStatus(data.message || 'No fue posible actualizar el archivo.', 'error');
+        return;
+      }
+
+      showStatus(data.message || 'Archivo actualizado correctamente.');
+      setTimeout(() => window.location.reload(), 500);
+    }
+
+    async function deleteFile(fileId, fileNameToDelete) {
+      const confirmed = window.confirm(`¿Deseas eliminar el archivo ${fileNameToDelete}? Esta acción impedirá que participe en el RAG.`);
+      if (!confirmed) {
+        return;
+      }
+
+      const response = await fetch(`/files/${fileId}/delete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showStatus(data.message || 'No fue posible eliminar el archivo.', 'error');
+        return;
+      }
+
+      showStatus(data.message || 'Archivo eliminado correctamente.');
+      setTimeout(() => window.location.reload(), 500);
     }
 
     document.getElementById('logoutBtn').onclick = async function() {
