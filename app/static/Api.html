@@ -2,107 +2,69 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>API del chatbot</title>
     <style>
-        #boton-chat {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #25D366;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 28px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            z-index: 999;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.5;
+            color: #1f2937;
         }
 
-        #ventana-chat {
-            display: none;
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 260px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            padding: 10px;
-            z-index: 999;
+        h1, h2 {
+            color: #111827;
         }
 
-        #ventana-chat textarea {
-            width: 100%;
-            border-radius: 5px;
-            padding: 5px;
-            resize: none;
-            border: 1px solid #ccc;
-            font-size: 14px;
+        code, pre {
+            background: #f3f4f6;
+            border-radius: 8px;
         }
 
-        #ventana-chat button {
-            margin-top: 5px;
-            width: 100%;
-            padding: 6px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
+        code {
+            padding: 2px 6px;
         }
 
-        #ventana-chat button:hover {
-            background-color: #0056b3;
+        pre {
+            padding: 16px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
-    <!-- Botón flotante -->
-    <button id="boton-chat">💬</button>
+    <h1>API del chatbot con selección de archivo</h1>
+    <p>La API permite consultar el modelo indicando explícitamente el archivo PDF que se usará como contexto y el prompt que se enviará al modelo.</p>
 
-    <!-- Ventana de chat -->
-    <div id="ventana-chat">
-        <form id="form-chat">
-            <textarea name="mensaje" rows="3" placeholder="Escribe tu mensaje..."></textarea>
-            <button type="submit">Enviar</button>
-        </form>
-    </div>
+    <h2>1. Subir un archivo</h2>
+    <p>Primero sube el PDF a la carpeta de trabajo del chatbot.</p>
+    <pre>POST /upload</pre>
+    <p>Envía el archivo en <code>multipart/form-data</code> con la clave <code>file</code>.</p>
 
-    <script>
-        const btnChat = document.getElementById('boton-chat');
-        const ventana = document.getElementById('ventana-chat');
-        const form = document.getElementById('form-chat');
+    <h2>2. Ver archivos disponibles</h2>
+    <pre>GET /api/files</pre>
 
-        btnChat.addEventListener('click', () => {
-            ventana.style.display = (ventana.style.display === 'none' || ventana.style.display === '') ? 'block' : 'none';
-        });
+    <h2>3. Consultar el chatbot</h2>
+    <pre>POST /api/chat
+Content-Type: application/json
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const mensaje = this.mensaje.value.trim();
+{
+  "archivo": "manual_usuario.pdf",
+  "prompt": "Resume los puntos principales del documento"
+}</pre>
 
-            if (mensaje !== '') {
-                fetch('http://127.0.0.1/test_connection', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ role: "user", content: mensaje })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert("Mensaje enviado correctamente");
-                    form.reset();
-                    ventana.style.display = 'none';
-                })
-                .catch(error => {
-                    alert("Error al enviar el mensaje");
-                    console.error(error);
-                });
-            }
-        });
-    </script>
+    <h2>Respuesta esperada</h2>
+    <pre>{
+  "archivo": "manual_usuario.pdf",
+  "modelo": "llama3.1:latest",
+  "prompt": "Resume los puntos principales del documento",
+  "respuesta": "..."
+}</pre>
+
+    <h2>Ejemplo con cURL</h2>
+    <pre>curl -X POST http://127.0.0.1:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "archivo": "manual_usuario.pdf",
+    "prompt": "Que informacion relevante contiene este archivo?"
+  }'</pre>
 </body>
 </html>

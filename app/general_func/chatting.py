@@ -23,24 +23,38 @@ class Chating_func():
 
     def Read_content (self) -> str:
         #Descargar el archivo PDF cargado
-        uploaded_files = os.listdir(self.folder_chatting)
-        if uploaded_files:
-            pdf_path = os.path.join(self.folder_chatting, uploaded_files[0])
-            try:
-                with open(pdf_path, 'rb') as pdf_file:
-                    reader = PyPDF2.PdfReader(pdf_file)
-                    pdf_content = ""
-                    for page in reader.pages:
-                        pdf_content += page.extract_text()
-                return pdf_content
-            except Exception as e:
+        if not os.path.isdir(self.folder_chatting):
+            return ""
+
+        if self.selected_file:
+            pdf_path = os.path.join(self.folder_chatting, self.selected_file)
+            if not os.path.isfile(pdf_path):
                 return ""
         else:
+            uploaded_files = [
+                file_name for file_name in os.listdir(self.folder_chatting)
+                if file_name.lower().endswith(".pdf")
+            ]
+            if not uploaded_files:
+                return ""
+            pdf_path = os.path.join(self.folder_chatting, uploaded_files[0])
+
+        try:
+            with open(pdf_path, 'rb') as pdf_file:
+                reader = PyPDF2.PdfReader(pdf_file)
+                pdf_content = ""
+                for page in reader.pages:
+                    extracted_text = page.extract_text() or ""
+                    pdf_content += extracted_text
+            return pdf_content
+        except Exception:
             return ""
-    def __init__(self,folder_chatting:str=None):
+
+    def __init__(self,folder_chatting:str=None, selected_file:str=None):
         #Generar una instancia 
         Chating_func.instancia += 1
         #Descargar el archivo PDF cargado
         self.folder_chatting = folder_chatting
+        self.selected_file = selected_file
         self.content_pdf = self.Read_content()
 

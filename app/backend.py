@@ -13,6 +13,45 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_uploaded_pdf_files():
+    if not os.path.isdir(app.config['UPLOAD_FOLDER']):
+        return []
+
+    return sorted(
+        file_name for file_name in os.listdir(app.config['UPLOAD_FOLDER'])
+        if allowed_file(file_name)
+    )
+
+
+def ejecutar_chat_archivo(nombre_archivo, mensaje):
+    chatting = Chating_func(
+        folder_chatting=app.config['UPLOAD_FOLDER'],
+        selected_file=nombre_archivo,
+    )
+
+    if not chatting.content_pdf:
+        raise FileNotFoundError(nombre_archivo)
+
+    peticion = chatting.RAG_model(mensaje)
+    response = requests.post(OLLAMA_URL, json=peticion, timeout=60)
+    response.raise_for_status()
+    data = response.json()
+
+    return {
+        "archivo": nombre_archivo,
+        "prompt": mensaje,
+        "respuesta": data["message"]["content"],
+        "modelo": peticion["model"],
+    }
 
 
 
@@ -101,6 +140,52 @@ def Login():
         return render_template("login.html")
 
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"message": "No se envió ningún archivo"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"message": "No se seleccionó ningún archivo"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"message": "Archivo no permitido"}), 400
+
+    filename = secure_filename(file.filename)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return jsonify({"message": "Archivo subido correctamente", "filename": filename}), 200
+
+
+@app.route('/api/files', methods=['GET'])
+def list_uploaded_files():
+    return jsonify({"files": get_uploaded_pdf_files()})
+
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat_with_file():
+    data = request.get_json(silent=True) or {}
+    mensaje = (data.get('prompt') or data.get('mensaje') or '').strip()
+    nombre_archivo = (data.get('archivo') or data.get('filename') or '').strip()
+
+    if not mensaje:
+        return jsonify({"message": "El campo 'prompt' es obligatorio"}), 400
+
+    if not nombre_archivo:
+        return jsonify({"message": "El campo 'archivo' es obligatorio"}), 400
+
+    if not allowed_file(nombre_archivo):
+        return jsonify({"message": "Solo se permiten archivos PDF"}), 400
+
+    try:
+        result = ejecutar_chat_archivo(nombre_archivo, mensaje)
+        return jsonify(result), 200
+    except FileNotFoundError:
+        return jsonify({"message": "El archivo solicitado no existe en uploads"}), 404
+    except requests.RequestException as exc:
+        return jsonify({"message": f"Error al consultar el modelo: {str(exc)}"}), 502
+
+
 #Funcion de testeo de conexion
 @app.route("/test_connection", methods=["GET", "POST"])
 def index():
@@ -109,18 +194,18 @@ def index():
 
     # leer archivo 
     if request.method == "POST":
-        #Validacion la creacion de la funcion
-        if Chating_func.instancia == 0:
-            global chatting
-            chatting = Chating_func(folder_chatting=app.config['UPLOAD_FOLDER'])
-
         #leer elmensaje del usuario y generr una peticion para el modelo RAG
         mensaje = request.form.get("mensaje")
-        peticion = chatting.RAG_model(mensaje)
+        archivos = get_uploaded_pdf_files()
 
-        print(peticion)
-        r = requests.post("http://127.0.0.1:11434/api/chat", json=peticion)
-        respuesta = r.json()["message"]["content"]
+        if mensaje and archivos:
+            try:
+                result = ejecutar_chat_archivo(archivos[0], mensaje)
+                respuesta = result["respuesta"]
+            except (FileNotFoundError, requests.RequestException):
+                respuesta = "No fue posible generar una respuesta en este momento."
+        elif mensaje:
+            respuesta = "No hay archivos PDF disponibles en uploads para construir el contexto."
 
         #Agregar al contexto
         
