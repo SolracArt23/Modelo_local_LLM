@@ -5,193 +5,705 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Testing Model</title>
   <style>
+    :root {
+      --bg: #f3f3f1;
+      --surface: #ffffff;
+      --surface-muted: #f7f7f5;
+      --surface-strong: #111111;
+      --surface-soft: #e9e9e6;
+      --text: #121212;
+      --muted: #666666;
+      --line: #d8d8d4;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #141e30, #243b55);
-      color: #fff;
+      background:
+        radial-gradient(circle at top right, rgba(0,0,0,0.05), transparent 25%),
+        linear-gradient(180deg, #efefec 0%, #f7f7f5 100%);
+      color: var(--text);
       display: flex;
       min-height: 100vh;
     }
 
     .sidebar {
-      width: 220px;
-      background-color: #1a1a2e;
-      padding: 30px 20px;
+      width: 260px;
+      background:
+        linear-gradient(180deg, #0c0c0c 0%, #1b1b1b 100%);
+      padding: 34px 24px;
       display: flex;
       flex-direction: column;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      justify-content: space-between;
+      box-shadow: 8px 0 24px rgba(0,0,0,0.08);
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 34px;
+      color: #f7f7f7;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffffff, #666666);
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.08);
     }
 
     .sidebar h2 {
-      color: #00f2fe;
-      font-size: 18px;
-      margin-bottom: 30px;
+      color: #f2f2f2;
+      font-size: 12px;
+      margin: 0 0 16px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 600;
     }
 
     .sidebar a {
       text-decoration: none;
-      color: #b0bec5;
-      margin: 10px 0;
-      transition: color 0.2s ease;
+      color: rgba(255,255,255,0.72);
+      margin: 6px 0;
+      transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      padding: 13px 14px;
+      border-radius: 14px;
+      display: block;
     }
 
     .sidebar a:hover {
-      color: #00f2fe;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      transform: translateX(2px);
+    }
+
+    .sidebar-footnote {
+      color: rgba(255,255,255,0.45);
+      font-size: 13px;
+      line-height: 1.6;
     }
 
     .main {
       flex: 1;
-      padding: 40px;
+      padding: 36px;
     }
 
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .header-copy small {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 12px;
     }
 
     .header h1 {
-      font-size: 26px;
-      color: #00f2fe;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      margin: 0;
+      letter-spacing: -0.05em;
+    }
+
+    .header p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 720px;
+      line-height: 1.65;
     }
 
     .profile-icon {
-      width: 45px;
-      height: 45px;
-      background-color: #00f2fe;
-      border-radius: 50%;
+      min-width: 54px;
+      height: 54px;
+      background: #111111;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #141e30;
+      color: #ffffff;
       font-weight: bold;
       font-size: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .panel,
+    .form-section {
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-panel {
+      padding: 28px;
+      background:
+        linear-gradient(145deg, #ffffff 0%, #f1f1ee 100%);
+    }
+
+    .hero-panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.8rem;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .stat-card {
+      background: rgba(17,17,17,0.04);
+      border: 1px solid rgba(17,17,17,0.08);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 1.25rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-card span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .identity-card {
+      padding: 28px;
+      background: linear-gradient(180deg, #141414 0%, #242424 100%);
+      color: #fff;
+    }
+
+    .identity-card .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .identity-card h3 {
+      margin: 16px 0 12px;
+      font-size: 1.8rem;
+      letter-spacing: -0.04em;
+    }
+
+    .identity-card p {
+      margin: 0;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.65;
+    }
+
+    .identity-meta {
+      margin-top: 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .identity-chip {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .identity-chip span {
+      display: block;
+      font-size: 12px;
+      color: rgba(255,255,255,0.58);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .identity-chip strong {
+      font-size: 15px;
+      font-weight: 600;
     }
 
     .form-section {
-      margin-top: 40px;
-      background-color: #1f4068;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      padding: 28px;
+      margin-bottom: 22px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .section-head h3 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      letter-spacing: -0.04em;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 720px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .dropzone {
+      position: relative;
+      min-height: 280px;
+      border: 1.5px dashed #a8a8a3;
+      border-radius: 26px;
+      background:
+        linear-gradient(180deg, rgba(17,17,17,0.02), rgba(17,17,17,0.04)),
+        var(--surface-muted);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 28px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .dropzone.dragover {
+      border-color: #111111;
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      background: #f0f0ed;
+    }
+
+    .dropzone-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 24px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 22px;
+      margin-bottom: 18px;
+    }
+
+    .dropzone h4 {
+      margin: 0 0 10px;
+      font-size: 1.45rem;
+      letter-spacing: -0.03em;
+    }
+
+    .dropzone p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 360px;
+    }
+
+    .dropzone .caption {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #777;
+      letter-spacing: 0.02em;
+    }
+
+    .file-name {
+      margin-top: 18px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(17,17,17,0.08);
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      display: none;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .form-fields {
+      display: grid;
+      gap: 16px;
     }
 
     .form-section label {
       display: block;
-      margin-bottom: 10px;
-      font-weight: bold;
-      color: #00f2fe;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1b1b1b;
+      font-size: 14px;
     }
 
     .form-section input[type="file"],
     .form-section input[type="text"],
     .form-section textarea {
       width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      margin-bottom: 20px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      margin-bottom: 0;
       font-size: 15px;
+      background: #fbfbfa;
+      color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .form-section textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .form-section input[type="text"]:focus,
+    .form-section textarea:focus {
+      outline: none;
+      border-color: #111111;
+      box-shadow: 0 0 0 4px rgba(17,17,17,0.06);
+      background: #fff;
     }
 
     .form-section button {
-      background-color: #00f2fe;
+      background: linear-gradient(180deg, #1a1a1a 0%, #050505 100%);
       border: none;
-      padding: 12px 20px;
+      padding: 14px 20px;
       font-size: 16px;
-      border-radius: 6px;
-      color: #141e30;
-      font-weight: bold;
+      border-radius: 16px;
+      color: #fff;
+      font-weight: 700;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      width: auto;
     }
 
     .form-section button:hover {
-      background-color: #00c9d7;
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .tools-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .tool-card {
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .tool-card h4 {
+      margin: 0 0 10px;
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .tool-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .tool-card .hint {
+      color: #7a7a7a;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    .logout-btn {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      background: #111111;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 15px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: 0 18px 35px rgba(0,0,0,0.16);
+      cursor: pointer;
+      z-index: 1000;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    @media (max-width: 1080px) {
+      .top-grid,
+      .upload-grid,
+      .tools-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        padding: 24px;
+        gap: 20px;
+      }
+
+      .main {
+        padding: 22px;
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .main {
+        padding: 16px;
+      }
+
+      .form-section,
+      .hero-panel,
+      .identity-card,
+      .tool-card {
+        padding: 20px;
+      }
+
+      .logout-btn {
+        right: 16px;
+        bottom: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h2>Menú</h2>
-    <a href="#">Upload Files</a>
-    <a href="/test_connection">Script Panel</a>
-    <a href="#apiConnectCode">API Connect</a>
+    <div>
+      <div class="brand-mark">Document Console</div>
+      <h2>Menú</h2>
+      <a href="#uploadSection">Gestión de archivos</a>
+      <a href="/test_connection">Panel de pruebas</a>
+      <a href="#apiConnectCode">Conexión API</a>
+    </div>
+    <div class="sidebar-footnote">
+      Interfaz enfocada en una carga más limpia, ordenada y profesional para tus documentos PDF.
+    </div>
   </div>
 
 <div class="main">
     <div class="header">
-        <h1>Mockup / Main</h1>
-        <div class="profile-icon">👤</div>
+        <div class="header-copy">
+          <small>Workspace</small>
+          <h1>Centro de documentos</h1>
+          <p>Administra archivos, prepara contexto para el chatbot y descarga el componente de integración desde una interfaz más sobria y orientada a trabajo real.</p>
+        </div>
+        <div class="profile-icon">{{ (usuario or 'U')[0]|upper }}</div>
     </div>
-    <script>
-        // Leer datos del localStorage
-        const user = localStorage.getItem('usuario') || 'Usuario';
-        const company = localStorage.getItem('empresa') || 'Empresa';
 
-        // Crear elementos para mostrar usuario y empresa
-        const userInfo = document.createElement('div');
-        userInfo.style.marginTop = '20px';
-        userInfo.style.color = '#00f2fe';
-        userInfo.style.fontSize = '18px';
-        userInfo.innerHTML = `<strong>Usuario:</strong> ${user} <br> <strong>Empresa:</strong> ${company}`;
+    <div class="top-grid">
+      <section class="hero-panel panel">
+        <h2>Sube, describe y organiza el contexto.</h2>
+        <p>Este panel concentra la preparación de documentos para el modelo. Carga archivos PDF con arrastre directo, añade contexto operativo y conserva una vista más clara de la sesión activa.</p>
 
-        // Agregar la información al contenedor principal
-        document.querySelector('.main').appendChild(userInfo);
-    </script>
+        <div class="hero-stats">
+          <div class="stat-card">
+            <strong>PDF</strong>
+            <span>Zona de carga con drag and drop para seleccionar archivos con menos fricción.</span>
+          </div>
+          <div class="stat-card">
+            <strong>RAG</strong>
+            <span>Describe cuándo usar cada documento para orientar mejor las consultas del modelo.</span>
+          </div>
+          <div class="stat-card">
+            <strong>API</strong>
+            <span>Descarga el componente de conexión para integrarlo con tu frontend.</span>
+          </div>
+        </div>
+      </section>
 
-    <div class="form-section">
-        <!-- formulario para enviar archivos -->
-        <form action="/upload" method="post" enctype="multipart/form-data">
-        <label for="file">Subir archivo (.pdf):</label>
-        <input type="file" id="file" name="file" accept=".pdf">
+      <aside class="identity-card panel">
+        <div class="eyebrow">Sesión actual</div>
+        <h3>{{ usuario or 'Usuario' }}</h3>
+        <p>Espacio activo para la administración de archivos y el consumo del asistente documental.</p>
 
-        <label for="description">Breve descripción:</label>
-        <textarea id="description" name="description" rows="4" placeholder="Escribe la descripción del archivo..."></textarea>
-
-        <label for="apiKey">Cuando usar?:</label>
-        <input type="text" id="casos_de_uso" name="casos_de_uso" placeholder="Usar este archivo cuando necesites ....">
-
-        <button type="submit">Enviar</button>
-    </form>
+        <div class="identity-meta">
+          <div class="identity-chip">
+            <span>Usuario</span>
+            <strong>{{ usuario or 'Usuario' }}</strong>
+          </div>
+          <div class="identity-chip">
+            <span>Empresa</span>
+            <strong>{{ empresa or 'Empresa' }}</strong>
+          </div>
+        </div>
+      </aside>
     </div>
-    <div class="form-section">
-        <label for="apiConnectCode">Despliega esto en tu web:</label>
+
+    <section class="form-section" id="uploadSection">
+      <div class="section-head">
+        <div>
+          <h3>Gestión de archivos</h3>
+          <p>Sube un PDF desde una zona visual más cuidada. El área acepta selección manual o arrastrar y soltar directamente sobre el panel.</p>
+        </div>
+      </div>
+
+      <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+        <div class="upload-grid">
+          <label class="dropzone" id="dropzone" for="file">
+            <div class="dropzone-badge">PDF</div>
+            <h4>Arrastra tu archivo aquí</h4>
+            <p>También puedes hacer clic para buscarlo manualmente. Solo se admiten documentos en formato PDF.</p>
+            <div class="caption">Diseñado para una carga más limpia y profesional.</div>
+            <div class="file-name" id="fileName"></div>
+          </label>
+
+          <div class="form-fields">
+            <div>
+              <label for="description">Breve descripción</label>
+              <textarea id="description" name="description" rows="4" placeholder="Describe el contenido, propósito o alcance del documento."></textarea>
+            </div>
+
+            <div>
+              <label for="casos_de_uso">Cuándo usar este archivo</label>
+              <input type="text" id="casos_de_uso" name="casos_de_uso" placeholder="Usar este archivo cuando necesites responder sobre soporte, ventas, procesos internos...">
+            </div>
+
+            <div>
+              <button type="submit">Subir documento</button>
+            </div>
+          </div>
+        </div>
+
+        <input class="hidden-file-input" type="file" id="file" name="file" accept=".pdf">
+      </form>
+    </section>
+
+    <section class="tools-panel">
+      <div class="tool-card">
+        <h4 id="apiConnectCode">Conecta la API a tu web</h4>
+        <p>Descarga el archivo de integración y úsalo como base para insertar el componente del chatbot en tu sitio.</p>
         <button onclick="downloadApiFile()">Descargar Api.html</button>
-    <script>
-        function downloadApiFile() {
-            const link = document.createElement('a');
-            link.href = '/descargar_api';
-            link.click();
-        }
-    </script>
+        <div class="hint">El archivo se descargará directamente desde el backend actual.</div>
+      </div>
 
+      <div class="tool-card">
+        <h4>Estado del panel</h4>
+        <p>La interfaz fue ajustada a una paleta en blanco, negro y grises suaves para lograr una apariencia más sobria y usable.</p>
+        <div class="hint">Puedes seguir refinando esta base con listado de archivos subidos, progreso de carga o historial de consultas.</div>
+      </div>
+    </section>
 
-    </div>
-
-  <!-- Botón de logout fijo en la esquina inferior derecha -->
-  <button id="logoutBtn" style="position:fixed; right:30px; bottom:30px; background-color:#d32f2f; color:#fff; border:none; border-radius:8px; padding:16px 28px; font-size:18px; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2); cursor:pointer; z-index:1000;">Logout</button>
+  <button id="logoutBtn" class="logout-btn">Cerrar sesión</button>
   <script>
-    document.getElementById('logoutBtn').onclick = async function() {
-      const usuario = localStorage.getItem('usuario');
-      const password = localStorage.getItem('password');
-      if (!usuario || !password) {
-        alert('No hay usuario logueado.');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file');
+    const fileName = document.getElementById('fileName');
+
+    function updateSelectedFile(file) {
+      if (!file) {
+        fileName.style.display = 'none';
+        fileName.textContent = '';
         return;
       }
-      // Verificar con backend si el usuario está logueado (en caché)
+
+      fileName.style.display = 'inline-flex';
+      fileName.textContent = file.name;
+    }
+
+    fileInput.addEventListener('change', function () {
+      updateSelectedFile(this.files[0]);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', function (event) {
+      const droppedFiles = event.dataTransfer.files;
+      if (!droppedFiles.length) {
+        return;
+      }
+
+      fileInput.files = droppedFiles;
+      updateSelectedFile(droppedFiles[0]);
+    });
+
+    function downloadApiFile() {
+      const link = document.createElement('a');
+      link.href = '/descargar_api';
+      link.click();
+    }
+
+    document.getElementById('logoutBtn').onclick = async function() {
       const res = await fetch('/logout', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({usuario, password})
+        headers: {'Content-Type': 'application/json'}
       });
       const data = await res.json();
       if (res.ok && data.message === 'Logout exitoso') {
-        // Solo si el backend confirma, eliminar credenciales en frontend
-        localStorage.removeItem('usuario');
-        localStorage.removeItem('password');
-        localStorage.removeItem('empresa');
         alert('Sesión cerrada correctamente.');
         window.location.href = '/login';
       } else {

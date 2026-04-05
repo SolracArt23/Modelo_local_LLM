@@ -2,76 +2,210 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login y Registro</title>
   <style>
+    :root {
+      --bg: #0f0f10;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text: #141414;
+      --muted: #666666;
+      --accent: #111111;
+      --accent-soft: #f2f2f2;
+      --danger: #8b1e1e;
+      --success: #1d5f3a;
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #141e30, #243b55);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.07), transparent 35%),
+        linear-gradient(135deg, #050505 0%, #171717 55%, #2a2a2a 100%);
       color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .auth-shell {
+      width: 100%;
+      max-width: 1080px;
+      min-height: 680px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--panel-border);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .auth-hero {
+      padding: 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent);
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.82);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero-copy h1 {
+      margin: 24px 0 18px;
+      font-size: clamp(2.6rem, 5vw, 4.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 420px;
+    }
+
+    .hero-copy p {
+      max-width: 420px;
+      margin: 0;
+      color: rgba(255,255,255,0.72);
+      font-size: 17px;
+      line-height: 1.7;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+
+    .metric span {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    .forms-panel {
+      background: var(--panel);
+      color: var(--text);
+      padding: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .container {
-      background-color: #1f4068;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
+    }
+
+    .form-card {
+      animation: fadeUp 0.35s ease;
     }
 
     h2 {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #00f2fe;
+      margin: 0 0 10px;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      color: var(--muted);
+      line-height: 1.6;
     }
 
     label {
       display: block;
-      margin-bottom: 8px;
-      color: #00f2fe;
-      font-weight: bold;
+      margin-bottom: 10px;
+      color: #222;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.01em;
     }
 
     input {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
+      padding: 15px 16px;
+      margin-bottom: 18px;
+      border: 1px solid #d9d9d9;
+      border-radius: 16px;
+      font-size: 15px;
+      background: #fafafa;
+      color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #111;
+      box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08);
+      background: #fff;
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      background-color: #00f2fe;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, #161616 0%, #050505 100%);
       border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      color: #141e30;
+      border-radius: 16px;
+      font-weight: 700;
+      color: #fff;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.18);
     }
 
     button:hover {
-      background-color: #00c9d7;
+      transform: translateY(-1px);
+      opacity: 0.96;
     }
 
     .switch {
-      margin-top: 20px;
+      margin-top: 24px;
       text-align: center;
+      color: var(--muted);
+      font-size: 14px;
     }
 
     .switch a {
-      color: #00f2fe;
-      text-decoration: underline;
+      color: #111;
+      text-decoration: none;
       cursor: pointer;
+      font-weight: 700;
     }
 
     .hidden {
@@ -79,51 +213,127 @@
     }
 
     .message {
-      margin-top: 10px;
+      min-height: 24px;
+      margin-top: 8px;
       text-align: center;
-      color: #00ffae;
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 920px) {
+      .auth-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-hero {
+        min-height: 320px;
+        padding: 34px;
+      }
+
+      .hero-metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 14px;
+      }
+
+      .forms-panel,
+      .auth-hero {
+        padding: 26px;
+      }
+
+      .hero-copy h1 {
+        font-size: 2.5rem;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="auth-shell">
+    <section class="auth-hero">
+      <div>
+        <div class="hero-tag">Acceso seguro</div>
+        <div class="hero-copy">
+          <h1>Controla tu asistente documental.</h1>
+          <p>Inicia sesión o crea una cuenta para administrar archivos PDF, consultar el modelo y mantener un acceso más ordenado para cada empresa.</p>
+        </div>
+      </div>
 
-  <!-- Login -->
-  <div class="container" id="loginForm">
-    <h2>Iniciar Sesión</h2>
-    <label for="loginUser">Usuario</label>
-    <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
-    
-    <label for="loginPassword">Contraseña</label>
-    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
-    
-    <button onclick="enviarLogin()">Entrar</button>
+      <div class="hero-metrics">
+        <div class="metric">
+          <strong>01</strong>
+          <span>Acceso centralizado para tu panel.</span>
+        </div>
+        <div class="metric">
+          <strong>02</strong>
+          <span>Gestión privada por usuario y empresa.</span>
+        </div>
+        <div class="metric">
+          <strong>03</strong>
+          <span>Interfaz limpia para un flujo más profesional.</span>
+        </div>
+      </div>
+    </section>
 
-    <div class="message" id="loginMensaje"></div>
-    
-    <div class="switch">
-      ¿No tienes cuenta? <a onclick="toggleForms()">Regístrate</a>
-    </div>
-  </div>
+    <section class="forms-panel">
+      <div class="container">
+        <div class="form-card" id="loginForm">
+          <h2>Iniciar Sesión</h2>
+          <p class="subtitle">Accede a tu espacio de trabajo para cargar archivos y consultar el modelo.</p>
 
-  <!-- Registro -->
-  <div class="container hidden" id="registerForm">
-    <h2>Registro</h2>
-    <label for="regName">Nombre</label>
-    <input type="text" id="regName" placeholder="Tu nombre completo">
-    
-    <label for="regPassword">Contraseña</label>
-    <input type="password" id="regPassword" placeholder="Crea una contraseña">
-    
-    <label for="regCompany">Empresa</label>
-    <input type="text" id="regCompany" placeholder="Nombre de la empresa">
-    
-    <button onclick="enviarRegistro()">Registrarse</button>
+          <label for="loginUser">Usuario</label>
+          <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
 
-    <div class="message" id="registroMensaje"></div>
-    
-    <div class="switch">
-      ¿Ya tienes cuenta? <a onclick="toggleForms()">Inicia sesión</a>
-    </div>
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
+
+          <button onclick="enviarLogin()">Entrar</button>
+
+          <div class="message" id="loginMensaje"></div>
+
+          <div class="switch">
+            ¿No tienes cuenta? <a onclick="toggleForms()">Regístrate</a>
+          </div>
+        </div>
+
+        <div class="form-card hidden" id="registerForm">
+          <h2>Registro</h2>
+          <p class="subtitle">Crea una cuenta con la información base de tu organización.</p>
+
+          <label for="regName">Nombre</label>
+          <input type="text" id="regName" placeholder="Tu nombre completo">
+
+          <label for="regPassword">Contraseña</label>
+          <input type="password" id="regPassword" placeholder="Crea una contraseña segura">
+
+          <label for="regCompany">Empresa</label>
+          <input type="text" id="regCompany" placeholder="Nombre de la empresa">
+
+          <button onclick="enviarRegistro()">Registrarse</button>
+
+          <div class="message" id="registroMensaje"></div>
+
+          <div class="switch">
+            ¿Ya tienes cuenta? <a onclick="toggleForms()">Inicia sesión</a>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -135,9 +345,16 @@
     }
 
     function enviarRegistro() {
-      const nombre = document.getElementById('regName').value;
+      const nombre = document.getElementById('regName').value.trim();
       const password = document.getElementById('regPassword').value;
-      const empresa = document.getElementById('regCompany').value;
+      const empresa = document.getElementById('regCompany').value.trim();
+      const msg = document.getElementById('registroMensaje');
+
+      if (!nombre || !password || !empresa) {
+        msg.innerText = 'Todos los campos son obligatorios.';
+        msg.style.color = 'var(--danger)';
+        return;
+      }
 
       fetch('/Envio_datos', {
         method: 'POST',
@@ -150,23 +367,37 @@
           empresa: empresa
         })
       })
-      .then(response => response.json())
-      .then(data => {
-        const msg = document.getElementById('registroMensaje');
-        msg.innerText = data.message || "Registro exitoso.";
-        msg.style.color = "#00ffae";
+      .then(async response => {
+        const data = await response.json();
+        return { ok: response.ok, data };
+      })
+      .then(({ ok, data }) => {
+        msg.innerText = data.message || 'Registro procesado.';
+        msg.style.color = ok ? 'var(--success)' : 'var(--danger)';
+        if (ok) {
+          document.getElementById('loginUser').value = nombre;
+          document.getElementById('loginPassword').value = '';
+          document.getElementById('regPassword').value = '';
+          toggleForms();
+        }
       })
       .catch(error => {
-        const msg = document.getElementById('registroMensaje');
-        msg.innerText = "Error al registrar. Intenta de nuevo.";
-        msg.style.color = "red";
+        msg.innerText = 'Error al registrar. Intenta de nuevo.';
+        msg.style.color = 'var(--danger)';
         console.error('Error:', error);
       });
     }
 
     function enviarLogin() {
-      const usuario = document.getElementById('loginUser').value;
+      const usuario = document.getElementById('loginUser').value.trim();
       const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('loginMensaje');
+
+      if (!usuario || !password) {
+        msg.innerText = 'Usuario y contraseña son obligatorios.';
+        msg.style.color = 'var(--danger)';
+        return;
+      }
 
       fetch('/login', {
         method: 'POST',
@@ -178,23 +409,20 @@
           password: password
         })
       })
-      .then(response => response.json())
-      .then(data => {
-        const msg = document.getElementById('loginMensaje');
-        msg.innerText = data.message || "Inicio de sesión exitoso.";
-        msg.style.color = "#00ffae";
-        // Evalaur credenciales
-        if (data.message == "Credenciales correctas"){
-            localStorage.setItem('usuario', usuario);
-            localStorage.setItem('empresa', data.empresa);
-            window.location.href = "/";
+      .then(async response => {
+        const data = await response.json();
+        return { ok: response.ok, data };
+      })
+      .then(({ ok, data }) => {
+        msg.innerText = data.message || 'Inicio de sesión procesado.';
+        msg.style.color = ok ? 'var(--success)' : 'var(--danger)';
+        if (ok && data.message === 'Credenciales correctas') {
+          window.location.href = '/';
         }
-        
       })
       .catch(error => {
-        const msg = document.getElementById('loginMensaje');
-        msg.innerText = "Error al iniciar sesión.";
-        msg.style.color = "red";
+        msg.innerText = 'Error al iniciar sesión.';
+        msg.style.color = 'var(--danger)';
         console.error('Error:', error);
       });
     }

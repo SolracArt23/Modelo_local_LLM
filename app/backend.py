@@ -1,14 +1,16 @@
-from flask import Flask, request, render_template_string,render_template, jsonify,send_from_directory
+from flask import Flask, request, render_template_string,render_template, jsonify,send_from_directory, redirect, url_for, session
 from backend import *
 import requests
 import sqlite3
 import os
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import PyPDF2
 from general_func.chatting import Chating_func
 from general_func.BD_conn import BD_conn
 # Configuracion del servidor
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 # Configuración para subir archivos
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -30,6 +32,41 @@ def get_uploaded_pdf_files():
         file_name for file_name in os.listdir(app.config['UPLOAD_FOLDER'])
         if allowed_file(file_name)
     )
+
+
+def get_db():
+    if BD_conn.instancia == 0:
+        global bd
+        bd = BD_conn()
+    return bd
+
+
+def ensure_users_table():
+    database = get_db()
+    database.execute_query(
+        '''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            password TEXT NOT NULL,
+            empresa TEXT NOT NULL
+        )
+        '''
+    )
+
+
+def is_password_hash(password_value):
+    return password_value.startswith("scrypt:") or password_value.startswith("pbkdf2:")
+
+
+def verify_user_password(stored_password, plain_password):
+    if is_password_hash(stored_password):
+        return check_password_hash(stored_password, plain_password)
+    return stored_password == plain_password
+
+
+def normalize_text(value):
+    return (value or "").strip()
 
 
 def ejecutar_chat_archivo(nombre_archivo, mensaje):
@@ -58,7 +95,14 @@ def ejecutar_chat_archivo(nombre_archivo, mensaje):
 # Funcion de gestion
 @app.route("/",methods=["GET"])
 def main():
-    return render_template("main.html")
+    if "usuario" not in session:
+        return redirect(url_for("Login"))
+
+    return render_template(
+        "main.html",
+        usuario=session.get("usuario"),
+        empresa=session.get("empresa"),
+    )
 
 @app.route("/descargar_api")
 def descargar_api():
@@ -72,71 +116,88 @@ def descargar_api():
 #Funcion de login y resgistro
 @app.route('/Envio_datos', methods=['POST'])
 def registrar():
-    data = request.get_json()
-    # Conectar a la base de datos SQLite (se creará si no existe)
-        #testar si ya existia una conexion previa 
-    if BD_conn.instancia == 0:
-        global bd
-        bd = BD_conn()
-    
-    # Insertar los datos recibidos en la tabla
-    bd.execute_query('INSERT INTO usuarios (nombre,password,empresa) VALUES (?,?,?)', (str(data['nombre']),str(data['password']),str(data['empresa']),))
+    data = request.get_json(silent=True) or {}
+    nombre = normalize_text(data.get('nombre'))
+    password = normalize_text(data.get('password'))
+    empresa = normalize_text(data.get('empresa'))
 
-    return jsonify({"message": "Datos recibidos correctamente."})
+    if not nombre or not password or not empresa:
+        return jsonify({"message": "Nombre, contraseña y empresa son obligatorios."}), 400
+
+    if len(password) < 6:
+        return jsonify({"message": "La contraseña debe tener al menos 6 caracteres."}), 400
+
+    ensure_users_table()
+    database = get_db()
+    existing_user = database.execute_query(
+        'SELECT id FROM usuarios WHERE nombre = ?',
+        (nombre,)
+    )
+
+    if existing_user:
+        return jsonify({"message": "El usuario ya existe."}), 409
+
+    password_hash = generate_password_hash(password)
+    database.execute_query(
+        'INSERT INTO usuarios (nombre,password,empresa) VALUES (?,?,?)',
+        (nombre, password_hash, empresa)
+    )
+
+    return jsonify({"message": "Usuario registrado correctamente.", "usuario": nombre, "empresa": empresa}), 201
 
 
+@app.route('/register', methods=['POST'])
+def register_alias():
+    return registrar()
 
-# --- Cache para login ---
-login_cache = {}
+
 
 # --- Logout ---
 @app.route("/logout", methods=["POST"])
 def logout():
-    data = request.get_json()
-    usuario = data.get("usuario")
-    password = data.get("password")
-    if not usuario or not password:
-        return jsonify({"message": "Faltan campos"}), 400
-    cache_key = f"{usuario}:{password}"
-    print(f"Eliminando sesión de caché para {login_cache}")
-    if cache_key in login_cache:
-        del login_cache[cache_key]
-        return jsonify({"message": "Logout exitoso"}), 200
-    else:
-        return jsonify({"message": "No hay sesión activa para ese usuario"}), 404
+    if "usuario" not in session:
+        return jsonify({"message": "No hay una sesión activa."}), 404
+
+    session.clear()
+    return jsonify({"message": "Logout exitoso"}), 200
 
 @app.route("/login", methods=["GET", "POST"])
 def Login():
+    ensure_users_table()
+
     if request.method == "POST":
-        contenido = request.get_json()
-        usuario = contenido.get("usuario")
-        password = contenido.get("password")
+        contenido = request.get_json(silent=True) or {}
+        usuario = normalize_text(contenido.get("usuario"))
+        password = normalize_text(contenido.get("password"))
 
         if not usuario or not password:
             return jsonify({"message": "Faltan campos"}), 400
 
-        # Verificar en caché primero
-        cache_key = f"{usuario}:{password}"
-        if cache_key in login_cache:
-            empresa = login_cache[cache_key]
-            return jsonify({"message": "Credenciales correctas","usuario":usuario,"empresa":empresa}), 200
+        database = get_db()
+        result = database.execute_query(
+            "SELECT id, nombre, password, empresa FROM usuarios WHERE nombre = ?",
+            (usuario,)
+        )
 
-        # Si no está en caché, es obligatorio pasar por el login real
-        if BD_conn.instancia == 0:
-            global bd
-            bd = BD_conn()
-
-        result = bd.execute_query("SELECT id,empresa FROM usuarios WHERE nombre = ? AND password = ?", (usuario, password))
-        print(result,usuario,password)
-        if result and len(result) > 0:
-            empresa = result[0][1]
-            # Guardar en caché solo si el login es correcto
-            login_cache[cache_key] = empresa
-            return jsonify({"message": "Credenciales correctas","usuario":usuario,"empresa":empresa}), 200
-        else:
-            # No guardar en caché si el login falla
+        if not result:
             return jsonify({"message": "Credenciales incorrectas"}), 401
+
+        user_id, stored_name, stored_password, empresa = result[0]
+        if not verify_user_password(stored_password, password):
+            return jsonify({"message": "Credenciales incorrectas"}), 401
+
+        if not is_password_hash(stored_password):
+            database.execute_query(
+                "UPDATE usuarios SET password = ? WHERE id = ?",
+                (generate_password_hash(password), user_id)
+            )
+
+        session["usuario"] = stored_name
+        session["empresa"] = empresa
+        return jsonify({"message": "Credenciales correctas","usuario":stored_name,"empresa":empresa}), 200
     else:
+        if "usuario" in session:
+            return redirect(url_for("main"))
         return render_template("login.html")
 
 
