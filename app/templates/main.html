@@ -557,6 +557,122 @@
       background: #f7f7f5;
     }
 
+    .readonly-note {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(17,17,17,0.04);
+      border: 1px solid rgba(17,17,17,0.06);
+      color: #3b3b3b;
+      line-height: 1.65;
+    }
+
+    .admin-panel {
+      padding: 28px;
+      margin-bottom: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .admin-create-card {
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #fafaf8 0%, #f1f1ee 100%);
+      border: 1px solid var(--line);
+    }
+
+    .admin-create-card form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .admin-create-card input,
+    .admin-create-card select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .admin-create-card input:focus,
+    .admin-create-card select:focus {
+      outline: none;
+      border-color: #111111;
+      box-shadow: 0 0 0 4px rgba(17,17,17,0.06);
+    }
+
+    .admin-users-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .admin-user-card {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid rgba(17,17,17,0.06);
+      background: linear-gradient(145deg, #ffffff 0%, #f7f7f4 100%);
+    }
+
+    .admin-user-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .admin-user-head h4 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .admin-user-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .admin-user-credit-actions {
+      display: grid;
+      grid-template-columns: minmax(120px, 160px) repeat(4, auto);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .admin-user-credit-actions input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .admin-user-credit-actions button {
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+
+    .admin-user-current {
+      color: #555;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
     .model-config-panel {
       padding: 28px;
       margin-bottom: 22px;
@@ -841,7 +957,10 @@
       .file-meta,
       .config-grid,
       .credits-grid,
-      .credits-form-row {
+      .credits-form-row,
+      .admin-grid,
+      .admin-user-meta,
+      .admin-user-credit-actions {
         grid-template-columns: 1fr;
       }
     }
@@ -901,6 +1020,9 @@
       <h2>Menú</h2>
       <a href="#uploadSection">Gestión de archivos</a>
       <a href="/test_connection">Panel de pruebas</a>
+      {% if is_admin %}
+      <a href="#adminUsersSection">Administración</a>
+      {% endif %}
       <a href="#apiConnectCode">Conexión API</a>
     </div>
     <div class="sidebar-footnote">
@@ -952,6 +1074,10 @@
           <div class="identity-chip">
             <span>Empresa</span>
             <strong>{{ empresa or 'Empresa' }}</strong>
+          </div>
+          <div class="identity-chip">
+            <span>Rol</span>
+            <strong>{{ user_role_name or 'Cliente' }} · {{ user_role or 'C' }}</strong>
           </div>
         </div>
       </aside>
@@ -1082,7 +1208,7 @@ Usa un tono profesional y directo.</div>
       <div class="section-head">
         <div>
           <h3>Créditos y widget</h3>
-          <p>Gestiona el saldo disponible para el widget resumido y descarga un HTML listo para insertar en otra página web.</p>
+          <p>Consulta el saldo disponible del widget resumido y descarga un HTML listo para insertar en otra página web.</p>
         </div>
       </div>
 
@@ -1094,15 +1220,21 @@ Usa un tono profesional y directo.</div>
         </aside>
 
         <div class="credits-controls">
+          {% if is_admin %}
           <div>
             <label for="creditsAmount">Cantidad de créditos</label>
             <div class="credits-form-row">
               <input type="number" id="creditsAmount" min="0" step="1" value="10">
-              <button type="button" onclick="updateCredits('add')">Agregar</button>
-              <button type="button" class="secondary-btn" onclick="updateCredits('subtract')">Descontar</button>
-              <button type="button" class="ghost-btn" onclick="updateCredits('set')">Fijar saldo</button>
+              <button type="button" onclick="updateCredits('add', {{ current_user_id or 0 }})">Agregar</button>
+              <button type="button" class="secondary-btn" onclick="updateCredits('subtract', {{ current_user_id or 0 }})">Descontar</button>
+              <button type="button" class="ghost-btn" onclick="updateCredits('set', {{ current_user_id or 0 }})">Fijar saldo</button>
             </div>
           </div>
+          {% else %}
+          <div class="readonly-note">
+            Tu saldo se muestra en modo solo lectura. La asignación o ajuste de créditos solo puede hacerla un usuario con rol de administrador.
+          </div>
+          {% endif %}
 
           <div>
             <label>Token del widget</label>
@@ -1117,6 +1249,103 @@ Usa un tono profesional y directo.</div>
         </div>
       </div>
     </section>
+
+    {% if is_admin %}
+    <section class="admin-panel" id="adminUsersSection">
+      <div class="section-head">
+        <div>
+          <h3>Administración de usuarios</h3>
+          <p>Como administrador puedes crear usuarios, eliminar cuentas existentes y ajustar créditos por usuario sin salir del dashboard.</p>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <aside class="admin-create-card">
+          <h4>Crear usuario</h4>
+          <p class="hint">Define el rol inicial del nuevo usuario y, si lo necesitas, su saldo inicial de créditos.</p>
+          <form id="adminCreateUserForm">
+            <div>
+              <label for="adminUserName">Nombre de usuario</label>
+              <input type="text" id="adminUserName" required>
+            </div>
+            <div>
+              <label for="adminUserPassword">Contraseña</label>
+              <input type="password" id="adminUserPassword" minlength="6" required>
+            </div>
+            <div>
+              <label for="adminUserCompany">Empresa</label>
+              <input type="text" id="adminUserCompany" required>
+            </div>
+            <div>
+              <label for="adminUserRole">Tipo de usuario</label>
+              <select id="adminUserRole">
+                <option value="C">Cliente</option>
+                <option value="A">Administrador</option>
+              </select>
+            </div>
+            <div>
+              <label for="adminUserCredits">Créditos iniciales</label>
+              <input type="number" id="adminUserCredits" min="0" step="1" value="30">
+            </div>
+            <div>
+              <button type="submit">Crear usuario</button>
+            </div>
+          </form>
+          <div class="status-banner" id="adminUsersStatus"></div>
+        </aside>
+
+        <div>
+          {% if managed_users %}
+          <div class="admin-users-list">
+            {% for managed_user in managed_users %}
+            <article class="admin-user-card" data-user-id="{{ managed_user.id }}">
+              <div class="admin-user-head">
+                <div>
+                  <h4>{{ managed_user.nombre }}</h4>
+                  <div class="admin-user-current">{{ managed_user.rol_nombre }} · {{ managed_user.tipo_usuario }}{% if managed_user.id == current_user_id %} · Sesión actual{% endif %}</div>
+                </div>
+                <span class="status-pill {{ 'active' if managed_user.tipo_usuario == 'A' else 'inactive' }}">{{ managed_user.rol_nombre }}</span>
+              </div>
+
+              <div class="admin-user-meta">
+                <div class="file-meta-item">
+                  <span>Empresa</span>
+                  <strong>{{ managed_user.empresa }}</strong>
+                </div>
+                <div class="file-meta-item">
+                  <span>Créditos</span>
+                  <strong id="managedUserCredits-{{ managed_user.id }}">{{ managed_user.creditos }}</strong>
+                </div>
+                <div class="file-meta-item">
+                  <span>Token widget</span>
+                  <strong>{{ managed_user.widget_token[:20] }}...</strong>
+                </div>
+              </div>
+
+              <div class="admin-user-credit-actions">
+                <input type="number" id="creditInput-{{ managed_user.id }}" min="0" step="1" value="10">
+                <button type="button" onclick="updateCredits('add', {{ managed_user.id }})">Agregar</button>
+                <button type="button" class="secondary-btn" onclick="updateCredits('subtract', {{ managed_user.id }})">Descontar</button>
+                <button type="button" class="ghost-btn" onclick="updateCredits('set', {{ managed_user.id }})">Fijar saldo</button>
+                {% if managed_user.id != current_user_id %}
+                <button type="button" class="danger-btn" onclick="deleteManagedUser({{ managed_user.id }}, '{{ managed_user.nombre|replace("'", "\\'") }}')">Eliminar</button>
+                {% else %}
+                <button type="button" class="danger-btn" disabled>Sesión actual</button>
+                {% endif %}
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-library">
+            <strong>No hay usuarios disponibles para administrar.</strong>
+            <p>Crea el primer usuario desde el formulario lateral para empezar a gestionar el sistema.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
 
     <section class="tools-panel">
       <div class="tool-card">
@@ -1142,6 +1371,8 @@ Usa un tono profesional y directo.</div>
     const uploadStatus = document.getElementById('uploadStatus');
     const modelConfigStatus = document.getElementById('modelConfigStatus');
     const creditsStatus = document.getElementById('creditsStatus');
+    const adminUsersStatus = document.getElementById('adminUsersStatus');
+    const adminCreateUserForm = document.getElementById('adminCreateUserForm');
 
     function showStatus(message, type = 'success') {
       uploadStatus.textContent = message;
@@ -1156,6 +1387,15 @@ Usa un tono profesional y directo.</div>
     function showCreditsStatus(message, type = 'success') {
       creditsStatus.textContent = message;
       creditsStatus.className = `status-banner show ${type}`;
+    }
+
+    function showAdminUsersStatus(message, type = 'success') {
+      if (!adminUsersStatus) {
+        return;
+      }
+
+      adminUsersStatus.textContent = message;
+      adminUsersStatus.className = `status-banner show ${type}`;
     }
 
     function updateSelectedFile(file) {
@@ -1244,28 +1484,90 @@ Usa un tono profesional y directo.</div>
       showConfigStatus(data.message || 'Configuración guardada correctamente.');
     }
 
-    async function updateCredits(action) {
-      const amount = document.getElementById('creditsAmount').value;
+    async function updateCredits(action, targetUserId) {
+      const fallbackInput = document.getElementById('creditsAmount');
+      const scopedInput = document.getElementById(`creditInput-${targetUserId}`);
+      const amount = scopedInput ? scopedInput.value : (fallbackInput ? fallbackInput.value : 0);
       const response = await fetch('/credits', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action, amount })
+        body: JSON.stringify({ action, amount, target_user_id: targetUserId })
       });
       const data = await response.json();
 
       if (!response.ok) {
         showCreditsStatus(data.message || 'No fue posible actualizar los créditos.', 'error');
+        showAdminUsersStatus(data.message || 'No fue posible actualizar los créditos.', 'error');
         return;
       }
 
-      document.getElementById('creditsBalance').textContent = data.creditos;
+      if (Number(targetUserId) === Number({{ current_user_id or 0 }})) {
+        document.getElementById('creditsBalance').textContent = data.creditos;
+      }
+
+      const managedCredits = document.getElementById(`managedUserCredits-${targetUserId}`);
+      if (managedCredits) {
+        managedCredits.textContent = data.creditos;
+      }
+
       showCreditsStatus(data.message || 'Créditos actualizados correctamente.');
+      showAdminUsersStatus(`Créditos de ${data.target_user_name || 'usuario'} actualizados correctamente.`);
     }
 
     function downloadWidgetFile() {
       const link = document.createElement('a');
       link.href = '/descargar_widget';
       link.click();
+    }
+
+    if (adminCreateUserForm) {
+      adminCreateUserForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const payload = {
+          nombre: document.getElementById('adminUserName').value.trim(),
+          password: document.getElementById('adminUserPassword').value.trim(),
+          empresa: document.getElementById('adminUserCompany').value.trim(),
+          tipo_usuario: document.getElementById('adminUserRole').value,
+          creditos: document.getElementById('adminUserCredits').value
+        };
+
+        const response = await fetch('/admin/users', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAdminUsersStatus(data.message || 'No fue posible crear el usuario.', 'error');
+          return;
+        }
+
+        showAdminUsersStatus(data.message || 'Usuario creado correctamente.');
+        setTimeout(() => window.location.reload(), 600);
+      });
+    }
+
+    async function deleteManagedUser(userId, userName) {
+      const confirmed = window.confirm(`¿Deseas eliminar al usuario ${userName}? También se eliminarán sus archivos y su configuración.`);
+      if (!confirmed) {
+        return;
+      }
+
+      const response = await fetch(`/admin/users/${userId}/delete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showAdminUsersStatus(data.message || 'No fue posible eliminar el usuario.', 'error');
+        return;
+      }
+
+      showAdminUsersStatus(data.message || 'Usuario eliminado correctamente.');
+      setTimeout(() => window.location.reload(), 600);
     }
 
     async function toggleFile(fileId) {

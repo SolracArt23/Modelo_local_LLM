@@ -19,6 +19,8 @@ ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
 DEFAULT_CREDITS = 30
+ADMIN_ROLE = 'A'
+CLIENT_ROLE = 'C'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -53,6 +55,7 @@ def ensure_users_table():
             nombre TEXT NOT NULL,
             password TEXT NOT NULL,
             empresa TEXT NOT NULL,
+            tipo_usuario TEXT NOT NULL DEFAULT 'C',
             creditos INTEGER NOT NULL DEFAULT 30,
             widget_token TEXT
         )
@@ -64,10 +67,38 @@ def generate_widget_token():
     return f"widget_{uuid4().hex}{uuid4().hex}"
 
 
+def normalize_user_type(value):
+    normalized_value = normalize_text(value).upper()
+    return ADMIN_ROLE if normalized_value == ADMIN_ROLE else CLIENT_ROLE
+
+
+def get_user_role_label(user_type):
+    return 'Administrador' if normalize_user_type(user_type) == ADMIN_ROLE else 'Cliente'
+
+
+def count_admin_users():
+    database = get_db()
+    rows = database.execute_query(
+        'SELECT COUNT(*) FROM usuarios WHERE tipo_usuario = ?',
+        (ADMIN_ROLE,)
+    ) or []
+    return rows[0][0] if rows else 0
+
+
 def ensure_user_account_columns():
     database = get_db()
     columns = database.execute_query('PRAGMA table_info(usuarios)') or []
     column_names = {column[1] for column in columns}
+
+    if 'tipo_usuario' not in column_names:
+        database.execute_query(
+            f"ALTER TABLE usuarios ADD COLUMN tipo_usuario TEXT NOT NULL DEFAULT '{CLIENT_ROLE}'"
+        )
+
+    database.execute_query(
+        'UPDATE usuarios SET tipo_usuario = ? WHERE tipo_usuario IS NULL OR tipo_usuario NOT IN (?, ?)',
+        (CLIENT_ROLE, ADMIN_ROLE, CLIENT_ROLE)
+    )
 
     if 'creditos' not in column_names:
         database.execute_query(
@@ -90,6 +121,16 @@ def ensure_user_account_columns():
         'UPDATE usuarios SET creditos = ? WHERE creditos IS NULL',
         (DEFAULT_CREDITS,)
     )
+
+    if count_admin_users() == 0:
+        first_user = database.execute_query(
+            'SELECT id FROM usuarios ORDER BY id ASC LIMIT 1'
+        ) or []
+        if first_user:
+            database.execute_query(
+                'UPDATE usuarios SET tipo_usuario = ? WHERE id = ?',
+                (ADMIN_ROLE, first_user[0][0])
+            )
 
 
 def ensure_user_files_table():
@@ -156,7 +197,7 @@ def get_user_account(user_id):
     ensure_core_tables()
     database = get_db()
     rows = database.execute_query(
-        'SELECT id, nombre, empresa, creditos, widget_token FROM usuarios WHERE id = ?',
+        'SELECT id, nombre, empresa, tipo_usuario, creditos, widget_token FROM usuarios WHERE id = ?',
         (user_id,)
     ) or []
     if not rows:
@@ -167,8 +208,10 @@ def get_user_account(user_id):
         'id': row[0],
         'nombre': row[1],
         'empresa': row[2],
-        'creditos': row[3],
-        'widget_token': row[4],
+        'tipo_usuario': normalize_user_type(row[3]),
+        'rol_nombre': get_user_role_label(row[3]),
+        'creditos': row[4],
+        'widget_token': row[5],
     }
 
 
@@ -176,7 +219,7 @@ def get_user_by_widget_token(widget_token):
     ensure_core_tables()
     database = get_db()
     rows = database.execute_query(
-        'SELECT id, nombre, empresa, creditos, widget_token FROM usuarios WHERE widget_token = ?',
+        'SELECT id, nombre, empresa, tipo_usuario, creditos, widget_token FROM usuarios WHERE widget_token = ?',
         (widget_token,)
     ) or []
     if not rows:
@@ -187,9 +230,73 @@ def get_user_by_widget_token(widget_token):
         'id': row[0],
         'nombre': row[1],
         'empresa': row[2],
-        'creditos': row[3],
-        'widget_token': row[4],
+        'tipo_usuario': normalize_user_type(row[3]),
+        'rol_nombre': get_user_role_label(row[3]),
+        'creditos': row[4],
+        'widget_token': row[5],
     }
+
+
+def list_user_accounts():
+    ensure_core_tables()
+    database = get_db()
+    rows = database.execute_query(
+        '''
+        SELECT id, nombre, empresa, tipo_usuario, creditos, widget_token
+        FROM usuarios
+        ORDER BY CASE WHEN tipo_usuario = ? THEN 0 ELSE 1 END, id ASC
+        ''',
+        (ADMIN_ROLE,)
+    ) or []
+
+    users = []
+    for row in rows:
+        users.append({
+            'id': row[0],
+            'nombre': row[1],
+            'empresa': row[2],
+            'tipo_usuario': normalize_user_type(row[3]),
+            'rol_nombre': get_user_role_label(row[3]),
+            'creditos': row[4],
+            'widget_token': row[5],
+        })
+    return users
+
+
+def create_user_account(nombre, password, empresa, tipo_usuario=CLIENT_ROLE, creditos=DEFAULT_CREDITS):
+    ensure_core_tables()
+    database = get_db()
+    password_hash = generate_password_hash(password)
+    normalized_role = normalize_user_type(tipo_usuario)
+    safe_credits = max(0, int(creditos))
+
+    database.execute_query(
+        'INSERT INTO usuarios (nombre,password,empresa,tipo_usuario,creditos,widget_token) VALUES (?,?,?,?,?,?)',
+        (nombre, password_hash, empresa, normalized_role, safe_credits, generate_widget_token())
+    )
+
+    created_user = database.execute_query(
+        'SELECT id FROM usuarios WHERE nombre = ? ORDER BY id DESC LIMIT 1',
+        (nombre,)
+    ) or []
+    return get_user_account(created_user[0][0]) if created_user else None
+
+
+def delete_user_account(target_user_id):
+    account = get_user_account(target_user_id)
+    if not account:
+        return None
+
+    for file_record in get_user_files(target_user_id):
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_record['stored_name'])
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    database = get_db()
+    database.execute_query('DELETE FROM user_files WHERE user_id = ?', (target_user_id,))
+    database.execute_query('DELETE FROM user_model_settings WHERE user_id = ?', (target_user_id,))
+    database.execute_query('DELETE FROM usuarios WHERE id = ?', (target_user_id,))
+    return account
 
 
 def update_user_credits(user_id, new_credit_value):
@@ -382,6 +489,21 @@ def require_session_user():
     return user_id, None
 
 
+def require_admin_user():
+    user_id, auth_error = require_session_user()
+    if auth_error:
+        return None, None, auth_error
+
+    account = get_user_account(user_id)
+    if not account:
+        return None, None, (jsonify({"message": "Usuario no encontrado."}), 404)
+
+    if account['tipo_usuario'] != ADMIN_ROLE:
+        return user_id, account, (jsonify({"message": "Solo un administrador puede realizar esta acción."}), 403)
+
+    return user_id, account, None
+
+
 def ejecutar_chat_archivo(nombre_archivo, mensaje, custom_behavior=""):
     chatting = Chating_func(
         folder_chatting=app.config['UPLOAD_FOLDER'],
@@ -416,6 +538,7 @@ def main():
     ensure_core_tables()
 
     account = get_user_account(session.get("user_id"))
+    managed_users = list_user_accounts() if account and account['tipo_usuario'] == ADMIN_ROLE else []
 
     return render_template(
         "main.html",
@@ -425,6 +548,11 @@ def main():
         model_behavior=get_user_model_behavior(session.get("user_id")),
         user_credits=account['creditos'] if account else DEFAULT_CREDITS,
         widget_token=account['widget_token'] if account else '',
+        user_role=account['tipo_usuario'] if account else CLIENT_ROLE,
+        user_role_name=account['rol_nombre'] if account else get_user_role_label(CLIENT_ROLE),
+        is_admin=bool(account and account['tipo_usuario'] == ADMIN_ROLE),
+        managed_users=managed_users,
+        current_user_id=account['id'] if account else None,
     )
 
 @app.route("/descargar_api")
@@ -481,13 +609,16 @@ def registrar():
     if existing_user:
         return jsonify({"message": "El usuario ya existe."}), 409
 
-    password_hash = generate_password_hash(password)
-    database.execute_query(
-        'INSERT INTO usuarios (nombre,password,empresa,creditos,widget_token) VALUES (?,?,?,?,?)',
-        (nombre, password_hash, empresa, DEFAULT_CREDITS, generate_widget_token())
-    )
+    default_role = ADMIN_ROLE if count_admin_users() == 0 else CLIENT_ROLE
+    create_user_account(nombre, password, empresa, default_role, DEFAULT_CREDITS)
 
-    return jsonify({"message": "Usuario registrado correctamente.", "usuario": nombre, "empresa": empresa}), 201
+    return jsonify({
+        "message": "Usuario registrado correctamente.",
+        "usuario": nombre,
+        "empresa": empresa,
+        "tipo_usuario": default_role,
+        "rol_nombre": get_user_role_label(default_role),
+    }), 201
 
 
 @app.route('/register', methods=['POST'])
@@ -546,6 +677,8 @@ def Login():
             "usuario":stored_name,
             "empresa":empresa,
             "creditos": user_account['creditos'] if user_account else DEFAULT_CREDITS,
+            "tipo_usuario": user_account['tipo_usuario'] if user_account else CLIENT_ROLE,
+            "rol_nombre": user_account['rol_nombre'] if user_account else get_user_role_label(CLIENT_ROLE),
         }), 200
     else:
         if "usuario" in session:
@@ -604,18 +737,24 @@ def save_model_settings():
 
 @app.route('/credits', methods=['POST'])
 def manage_credits():
-    user_id, auth_error = require_session_user()
+    admin_user_id, admin_account, auth_error = require_admin_user()
     if auth_error:
         return auth_error
 
     data = request.get_json(silent=True) or {}
     action = normalize_text(data.get('action')).lower()
     amount = data.get('amount', 0)
+    target_user_id = data.get('target_user_id', admin_user_id)
 
     try:
         amount = int(amount)
     except (TypeError, ValueError):
         return jsonify({"message": "El monto de créditos no es válido."}), 400
+
+    try:
+        target_user_id = int(target_user_id)
+    except (TypeError, ValueError):
+        return jsonify({"message": "El usuario objetivo no es válido."}), 400
 
     if action not in {'add', 'subtract', 'set'}:
         return jsonify({"message": "La acción de créditos no es válida."}), 400
@@ -623,20 +762,89 @@ def manage_credits():
     if amount < 0:
         return jsonify({"message": "El monto de créditos debe ser positivo."}), 400
 
-    current_account = get_user_account(user_id)
+    current_account = get_user_account(target_user_id)
     if not current_account:
         return jsonify({"message": "Usuario no encontrado."}), 404
 
     if action == 'add':
-        updated_account = update_user_credits(user_id, current_account['creditos'] + amount)
+        updated_account = update_user_credits(target_user_id, current_account['creditos'] + amount)
     elif action == 'subtract':
-        updated_account = update_user_credits(user_id, current_account['creditos'] - amount)
+        updated_account = update_user_credits(target_user_id, current_account['creditos'] - amount)
     else:
-        updated_account = update_user_credits(user_id, amount)
+        updated_account = update_user_credits(target_user_id, amount)
 
     return jsonify({
         "message": "Créditos actualizados correctamente.",
         "creditos": updated_account['creditos'],
+        "target_user_id": updated_account['id'],
+        "target_user_name": updated_account['nombre'],
+        "updated_by": admin_account['nombre'],
+    }), 200
+
+
+@app.route('/admin/users', methods=['POST'])
+def admin_create_user():
+    _, _, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json(silent=True) or {}
+    nombre = normalize_text(data.get('nombre'))
+    password = normalize_text(data.get('password'))
+    empresa = normalize_text(data.get('empresa'))
+    tipo_usuario = normalize_user_type(data.get('tipo_usuario'))
+    creditos = data.get('creditos', DEFAULT_CREDITS)
+
+    if not nombre or not password or not empresa:
+        return jsonify({"message": "Nombre, contraseña y empresa son obligatorios."}), 400
+
+    if len(password) < 6:
+        return jsonify({"message": "La contraseña debe tener al menos 6 caracteres."}), 400
+
+    try:
+        creditos = int(creditos)
+    except (TypeError, ValueError):
+        return jsonify({"message": "Los créditos iniciales no son válidos."}), 400
+
+    if creditos < 0:
+        return jsonify({"message": "Los créditos iniciales deben ser positivos."}), 400
+
+    database = get_db()
+    existing_user = database.execute_query(
+        'SELECT id FROM usuarios WHERE nombre = ?',
+        (nombre,)
+    ) or []
+
+    if existing_user:
+        return jsonify({"message": "El usuario ya existe."}), 409
+
+    created_user = create_user_account(nombre, password, empresa, tipo_usuario, creditos)
+    return jsonify({
+        "message": "Usuario creado correctamente.",
+        "user": created_user,
+    }), 201
+
+
+@app.route('/admin/users/<int:target_user_id>/delete', methods=['POST'])
+def admin_delete_user(target_user_id):
+    admin_user_id, _, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    if target_user_id == admin_user_id:
+        return jsonify({"message": "No puedes eliminar tu propio usuario administrador desde este panel."}), 400
+
+    target_account = get_user_account(target_user_id)
+    if not target_account:
+        return jsonify({"message": "Usuario no encontrado."}), 404
+
+    if target_account['tipo_usuario'] == ADMIN_ROLE and count_admin_users() <= 1:
+        return jsonify({"message": "Debe existir al menos un administrador activo en el sistema."}), 400
+
+    deleted_user = delete_user_account(target_user_id)
+    return jsonify({
+        "message": "Usuario eliminado correctamente.",
+        "user": deleted_user,
     }), 200
 
 
