@@ -1,0 +1,54 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: modelo-local-web
+    environment:
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5000
+      OLLAMA_URL: http://ollama:11434/api/chat
+      SECRET_KEY: dev-secret-key-change-me
+      DB_PATH: db/mi_base.db
+      UPLOAD_FOLDER: /workspace/app/uploads
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app/uploads:/workspace/app/uploads
+      - ./db:/workspace/db
+    depends_on:
+      ollama:
+        condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: modelo-local-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: modelo-local-ollama-init
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint:
+      - /bin/sh
+      - -c
+      - ollama pull llama3.1:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: "no"
+
+volumes:
+  ollama_data:
