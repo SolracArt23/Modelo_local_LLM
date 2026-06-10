@@ -115,3 +115,100 @@ python app/backend.py
 ```
 
 Si Ollama ya esta corriendo, con eso deberias poder entrar a la aplicacion desde el navegador.
+
+## Ejecutar con Docker
+
+Tambien puedes levantar todo el entorno con Docker, incluyendo la aplicacion Flask y un contenedor de Ollama.
+
+### Archivos agregados para Docker
+
+- `Dockerfile`: construye la imagen de la aplicacion Python.
+- `docker-compose.yml`: levanta la web, Ollama y descarga el modelo automaticamente.
+- `.dockerignore`: evita copiar archivos innecesarios al contexto de build.
+- `requirements.txt`: dependencias Python necesarias para la app.
+
+### Requisito en el host
+
+- Docker Desktop instalado y ejecutandose.
+
+### Construccion y arranque
+
+Desde la raiz del proyecto ejecuta:
+
+```powershell
+docker compose up --build
+```
+
+Si quieres dejarlo ejecutandose en segundo plano:
+
+```powershell
+docker compose up --build -d
+```
+
+Ese comando hace lo siguiente:
+
+- construye la imagen de la aplicacion,
+- inicia un contenedor con Ollama,
+- descarga automaticamente el modelo `llama3.1:latest`,
+- y luego levanta la aplicacion web.
+
+En la primera ejecucion, la descarga del modelo puede tardar varios minutos porque baja aproximadamente 4.9 GB.
+
+### URLs esperadas
+
+- Aplicacion web: `http://127.0.0.1:5000`
+
+En esta configuracion Docker, Ollama queda accesible solo dentro de la red interna de Compose para evitar conflictos si ya tienes Ollama ejecutandose en el host.
+
+### Detener los contenedores
+
+```powershell
+docker compose down
+```
+
+Si tambien quieres eliminar el volumen donde Ollama guarda el modelo descargado:
+
+```powershell
+docker compose down -v
+```
+
+### Variables usadas en Docker
+
+En `docker-compose.yml` se configuran estas variables importantes:
+
+- `OLLAMA_URL=http://ollama:11434/api/chat`
+- `FLASK_HOST=0.0.0.0`
+- `FLASK_PORT=5000`
+- `DB_PATH=db/mi_base.db`
+
+### Nota importante sobre el modelo
+
+La configuracion de Docker descarga `llama3.1:latest`, porque es el modelo referenciado en la logica principal del proyecto. Si quieres usar otro modelo, debes cambiar:
+
+- el nombre del modelo en `docker-compose.yml`,
+- y, si aplica, el modelo enviado desde el codigo Python.
+
+### Verificar que quedo corriendo
+
+Puedes revisar el estado de los contenedores con:
+
+```powershell
+docker compose ps
+```
+
+Y validar que la web responde con:
+
+```powershell
+Invoke-WebRequest -Uri http://127.0.0.1:5000 -UseBasicParsing | Select-Object -ExpandProperty StatusCode
+```
+
+Si todo esta bien, ese comando debe devolver `200`.
+
+### Estado validado en esta configuracion
+
+La aplicacion fue probada en este entorno con los siguientes resultados:
+
+- `docker compose up --build -d` completo la construccion y el arranque.
+- `ollama-init` descargo correctamente el modelo `llama3.1:latest`.
+- `docker compose ps` dejo `modelo-local-ollama` en estado `healthy` y `modelo-local-web` en ejecucion.
+- `http://127.0.0.1:5000` respondio con codigo HTTP `200`.
